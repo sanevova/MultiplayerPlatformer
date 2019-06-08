@@ -101,8 +101,8 @@ function create ()
     this.add.text(0, 0, controlsString, { fontFamily: '"Roboto Condensed"', fontSize:'24px' });
 }
 
-function bindAttack(keyObj, animationName) {
-    if (keyObj.isDown && !player.isAttacking) {
+function bindAttack(condition, animationName) {
+    if (condition && !player.isAttacking) {
         player.isAttacking = true;
         setTimeout(() => {player.isAttacking = false;}, attackDuration);
         player.anims.play(animationName, false);
@@ -111,10 +111,37 @@ function bindAttack(keyObj, animationName) {
 
 function update ()
 {
+    // state
     airborne = !player.body.touching.down;
     shouldAnimateMovement = !airborne && !player.isAttacking;
     moveSpeed = player.isCrouching ? moveSpeedNormal / 2 : moveSpeedNormal;
-    if (cursors.left.isDown || keyA.isDown)
+
+    // movement
+    shouldMoveLeft = cursors.left.isDown || keyA.isDown
+    shouldMoveRight = cursors.right.isDown || keyD.isDown;
+    shouldJump = (cursors.up.isDown || keyW.isDown || cursors.space.isDown) && !airborne;
+    shouldSlash = keyQ.isDown;
+
+
+    // touch contorls
+    var pointer = this.input.activePointer;
+    if (pointer.isDown) {
+        var touchX = pointer.x;
+        var touchY = pointer.y;
+        if (touchY > world.height / 2) {
+            // |       |       |
+            // | left  | right |
+            shouldMoveRight = touchX > world.width / 2;
+            shouldMoveLeft = !shouldMoveRight;
+        } else {
+            // | slash |  jump |
+            // |       |       |
+            shouldJump = touchX > world.width / 2;
+            shouldSlash = !shouldJump
+        }
+    }
+
+    if (shouldMoveLeft)
     {
         player.setVelocityX(-moveSpeed);
 
@@ -123,7 +150,7 @@ function update ()
             player.anims.play('run', true);
         }
     }
-    else if (cursors.right.isDown || keyD.isDown)
+    else if (shouldMoveRight)
     {
         player.setVelocityX(moveSpeed);
         player.flipX = 0;
@@ -140,11 +167,12 @@ function update ()
     }
 
     // jump
-    if ((cursors.up.isDown || keyW.isDown || cursors.space.isDown) && !airborne)
+    if (shouldJump)
     {
         player.setVelocityY(-jumpSpeedNormal);
     }
 
+    // crouch
     if ((keyC.isDown || keyCtrl.isDown) && shouldAnimateMovement) {
         player.isCrouching = true;
         player.anims.play('crouch', true);
@@ -156,7 +184,8 @@ function update ()
       player.anims.play('jump', true);
     }
 
-    bindAttack(keyQ, 'attack_slash');
-    bindAttack(keyE, 'attack_overhead');
-    bindAttack(keyR, 'attack_uppercut');
+    bindAttack(shouldSlash, 'attack_slash');
+    bindAttack(keyE.isDown, 'attack_overhead');
+    bindAttack(keyR.isDown, 'attack_uppercut');
+
 }
