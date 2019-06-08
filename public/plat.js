@@ -4,7 +4,10 @@ world = {
     width: window.innerWidth,
     height: window.innerHeight
 };
-
+attackDuration = 500;
+moveSpeedNormal = 360;
+jumpSpeedNormal = 560;
+controlsString = 'MOVE=WASD ATTCK=QER CROUCH=C';
 var config = {
     type: Phaser.AUTO,
     width: world.width,
@@ -48,12 +51,19 @@ function preload ()
     keyA = this.input.keyboard.addKey('A');
     keyS = this.input.keyboard.addKey('S');
     keyD = this.input.keyboard.addKey('D');
+    keyQ = this.input.keyboard.addKey('Q');
+    keyE = this.input.keyboard.addKey('E');
+    keyR = this.input.keyboard.addKey('R');
+    keyC = this.input.keyboard.addKey('C');
+    keyCtrl = this.input.keyboard.addKey('Control');
 
 }
 
 function create ()
 {
     console.log('create');
+
+    // map creation
     this.add.image(400, 300, 'sky');
 
     platforms = this.physics.add.staticGroup();
@@ -63,18 +73,22 @@ function create ()
     platforms.create(500, 528, 'platform').refreshBody();
     platforms.create(700, 528, 'platform').refreshBody();
     platforms.create(1000, 628, 'platform').refreshBody();
+    platforms.create(1400, 828, 'platform').refreshBody();
+    platforms.create(1200, 998, 'platform').refreshBody();
+    platforms.create(900, 1100, 'platform').refreshBody();
     for (i = 0; i < 20; ++i) {
         platforms.create(200 * i + 100, world.height - 60, 'platform').refreshBody();
     }
-
     platforms.create(600, 370, 'platform');
     platforms.create(50, 250, 'platform');
     platforms.create(750, 220, 'platform');
 
+    // player creation
     player = this.physics.add.sprite(100, 450, 'adventurer').setSize(25, 34).setScale(2);
     console.log(player);
     player.setCollideWorldBounds(true);
 
+    // animations
     this.anims.create({
         key: 'idle',
         frames: this.anims.generateFrameNumbers('adventurer', { start: 0, end: 3 }),
@@ -96,51 +110,110 @@ function create ()
     this.anims.create({
         key: 'jump',
         frames: this.anims.generateFrameNumbers('adventurer', { start: 15, end: 18 }),
-        frameRate: 5,
-        repeat: -1
+        duration: 1500,
+        repeat: -1,
+        yoyo: 1
     });
+    this.anims.create({
+        key: 'attack_uppercut',
+        frames: this.anims.generateFrameNumbers('adventurer', { start: 42, end: 46 }),
+        duration: attackDuration,
+        repeat: 0
+    });
+    this.anims.create({
+        key: 'attack_overhead',
+        frames: this.anims.generateFrameNumbers('adventurer', { start: 47, end: 52 }),
+        duration: attackDuration,
+        repeat: 0
+    });
+    this.anims.create({
+        key: 'attack_slash',
+        frames: this.anims.generateFrameNumbers('adventurer', { start: 53, end: 59 }),
+        duration: attackDuration,
+        repeat: 0
+    });
+
 
     cursors = this.input.keyboard.createCursorKeys();
 
-    scoreText = this.add.text(16, 16, 'score: 0', { fontSize: '32px', fill: '#000' });
-
     this.physics.add.collider(player, platforms);
+    player.isAttacking = false;
+
+
+    this.add.text(0, 0, controlsString, { fontFamily: '"Roboto Condensed"', fontSize:'24px' });
+
+
+    console.log(cursors);
+    // this.input.keyboard.on('keydown', function (event) {
+    //     console.log('down', event);
+    //     if (event.key === "Control") {
+    //         console.log("IN");
+    //         // if (shouldAnimateMovement) {
+    //
+    //         // }
+    //     }
+    //
+    //
+    // });
+
+}
+
+function bindAttack(keyObj, animationName) {
+    if (keyObj.isDown && !player.isAttacking) {
+        player.isAttacking = true;
+        setTimeout(() => {player.isAttacking = false;}, attackDuration);
+        player.anims.play(animationName, false);
+    }
 }
 
 function update ()
 {
     airborne = !player.body.touching.down;
+    shouldAnimateMovement = !airborne && !player.isAttacking;
+    moveSpeed = player.isCrouching ? moveSpeedNormal / 2 : moveSpeedNormal;
     if (cursors.left.isDown || keyA.isDown)
     {
-        player.setVelocityX(-360);
+        player.setVelocityX(-moveSpeed);
 
         player.flipX = 1;
-        if (!airborne) {
+        if (shouldAnimateMovement) {
             player.anims.play('run', true);
         }
     }
     else if (cursors.right.isDown || keyD.isDown)
     {
-        player.setVelocityX(360);
+        player.setVelocityX(moveSpeed);
         player.flipX = 0;
-        if (!airborne) {
+        if (shouldAnimateMovement) {
             player.anims.play('run', true);
         }
     }
     else
     {
         player.setVelocityX(0);
-        if (!airborne) {
+        if (shouldAnimateMovement) {
             player.anims.play('idle', true);
         }
     }
 
+    // jump
     if ((cursors.up.isDown || keyW.isDown || cursors.space.isDown) && !airborne)
     {
-        player.setVelocityY(-530);
+        player.setVelocityY(-jumpSpeedNormal);
     }
 
-    if (airborne) {
+    if ((keyC.isDown || keyCtrl.isDown) && shouldAnimateMovement) {
+        player.isCrouching = true;
+        player.anims.play('crouch', true);
+    } else {
+        player.isCrouching = false;
+    }
+
+    if (airborne && !player.isAttacking) {
       player.anims.play('jump', true);
     }
+
+    bindAttack(keyQ, 'attack_slash');
+    bindAttack(keyE, 'attack_overhead');
+    bindAttack(keyR, 'attack_uppercut');
 }
