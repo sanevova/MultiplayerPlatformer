@@ -119,7 +119,7 @@ function update ()
     // movement
     shouldMoveLeft = cursors.left.isDown || keyA.isDown
     shouldMoveRight = cursors.right.isDown || keyD.isDown;
-    shouldJump = (cursors.up.isDown || keyW.isDown || cursors.space.isDown) && !airborne;
+    isTryingToJump = (cursors.up.isDown || keyW.isDown || cursors.space.isDown);
     shouldSlash = keyQ.isDown;
 
 
@@ -136,10 +136,11 @@ function update ()
         } else {
             // | slash |  jump |
             // |       |       |
-            shouldJump = touchX > world.width / 2;
+            isTryingToJump = touchX > world.width / 2;
             shouldSlash = !shouldJump
         }
     }
+    shouldJump = isTryingToJump && !airborne;
 
     if (shouldMoveLeft)
     {
