@@ -7,7 +7,7 @@ var config = {
     physics: {
         default: 'arcade',
         arcade: {
-            gravity: { y: 400 },
+            gravity: { y: 600 },
             debug: false
         }
     },
@@ -57,7 +57,7 @@ function create ()
     platforms.create(500, 528, 'platform').refreshBody();
     platforms.create(700, 528, 'platform').refreshBody();
 
-    platforms.create(600, 400, 'platform');
+    platforms.create(600, 370, 'platform');
     platforms.create(50, 250, 'platform');
     platforms.create(750, 220, 'platform');
 
@@ -99,23 +99,23 @@ function create ()
 
 function update ()
 {
-    if (!player.body.touching.down) {
-      player.anims.play('jump', true);
-      return;
-    }
+    airborne = !player.body.touching.down;
     if (cursors.left.isDown || keyA.isDown)
     {
-        player.setVelocityX(-160);
+        player.setVelocityX(-360);
 
-        player.anims.play('run', true);
         player.flipX = 1;
+        if (!airborne) {
+            player.anims.play('run', true);
+        }
     }
     else if (cursors.right.isDown || keyD.isDown)
     {
-        player.setVelocityX(160);
-        player.anims.play('run', true);
+        player.setVelocityX(360);
         player.flipX = 0;
-
+        if (!airborne) {
+            player.anims.play('run', true);
+        }
     }
     else
     {
@@ -125,6 +125,10 @@ function update ()
 
     if ((cursors.up.isDown || keyW.isDown || cursors.space.isDown) && player.body.touching.down)
     {
-        player.setVelocityY(-330);
+        player.setVelocityY(-530);
+    }
+
+    if (airborne) {
+      player.anims.play('jump', true);
     }
 }
