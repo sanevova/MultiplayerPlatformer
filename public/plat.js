@@ -46,7 +46,6 @@ function preload ()
     this.load.image('sky', 'assets/blocks/space3.png');
     this.load.image('logo', 'assets/blocks/phaser3-logo.png');
     this.load.image('red', 'assets/blocks/red.png');
-
     keyW = this.input.keyboard.addKey('W');
     keyA = this.input.keyboard.addKey('A');
     keyS = this.input.keyboard.addKey('S');
@@ -87,75 +86,19 @@ function create ()
     player = this.physics.add.sprite(100, 450, 'adventurer').setSize(25, 34).setScale(2);
     console.log(player);
     player.setCollideWorldBounds(true);
+    player.isAttacking = false;
+    var particles = this.add.particles('red');
+
 
     // animations
-    this.anims.create({
-        key: 'idle',
-        frames: this.anims.generateFrameNumbers('adventurer', { start: 0, end: 3 }),
-        frameRate: 10,
-        repeat: -1
-    });
-    this.anims.create({
-        key: 'crouch',
-        frames: this.anims.generateFrameNumbers('adventurer', { start: 4, end: 8 }),
-        frameRate: 10,
-        repeat: -1
-    });
-    this.anims.create({
-        key: 'run',
-        frames: this.anims.generateFrameNumbers('adventurer', { start: 9, end: 14 }),
-        frameRate: 10,
-        repeat: -1
-    });
-    this.anims.create({
-        key: 'jump',
-        frames: this.anims.generateFrameNumbers('adventurer', { start: 15, end: 18 }),
-        duration: 1500,
-        repeat: -1,
-        yoyo: 1
-    });
-    this.anims.create({
-        key: 'attack_uppercut',
-        frames: this.anims.generateFrameNumbers('adventurer', { start: 42, end: 46 }),
-        duration: attackDuration,
-        repeat: 0
-    });
-    this.anims.create({
-        key: 'attack_overhead',
-        frames: this.anims.generateFrameNumbers('adventurer', { start: 47, end: 52 }),
-        duration: attackDuration,
-        repeat: 0
-    });
-    this.anims.create({
-        key: 'attack_slash',
-        frames: this.anims.generateFrameNumbers('adventurer', { start: 53, end: 59 }),
-        duration: attackDuration,
-        repeat: 0
-    });
-
+    loadAnimations(this);
 
     cursors = this.input.keyboard.createCursorKeys();
 
     this.physics.add.collider(player, platforms);
-    player.isAttacking = false;
 
-
+    // controls
     this.add.text(0, 0, controlsString, { fontFamily: '"Roboto Condensed"', fontSize:'24px' });
-
-
-    console.log(cursors);
-    // this.input.keyboard.on('keydown', function (event) {
-    //     console.log('down', event);
-    //     if (event.key === "Control") {
-    //         console.log("IN");
-    //         // if (shouldAnimateMovement) {
-    //
-    //         // }
-    //     }
-    //
-    //
-    // });
-
 }
 
 function bindAttack(keyObj, animationName) {
