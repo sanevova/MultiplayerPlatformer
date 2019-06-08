@@ -1,9 +1,14 @@
 console.log('loaded plat.js');
 
+world = {
+    width: window.innerWidth,
+    height: window.innerHeight
+};
+
 var config = {
     type: Phaser.AUTO,
-    width: 800,
-    height: 600,
+    width: world.width,
+    height: world.height,
     physics: {
         default: 'arcade',
         arcade: {
@@ -31,7 +36,8 @@ function preload ()
 {
     console.log('preload');
 
-    this.load.image('platform', 'assets/blocks/platform.png');
+    platform_image = this.load.image('platform', 'assets/blocks/platform.png');
+    console.log('img', platform_image);
     this.load.spritesheet('adventurer', 'assets/adventurer/adventurer-sheet.png', { frameWidth: 50, frameHeight: 37 });
 
     this.load.image('sky', 'assets/blocks/space3.png');
@@ -56,12 +62,16 @@ function create ()
     platforms.create(300, 528, 'platform').refreshBody();
     platforms.create(500, 528, 'platform').refreshBody();
     platforms.create(700, 528, 'platform').refreshBody();
+    platforms.create(1000, 628, 'platform').refreshBody();
+    for (i = 0; i < 20; ++i) {
+        platforms.create(200 * i + 100, world.height - 60, 'platform').refreshBody();
+    }
 
     platforms.create(600, 370, 'platform');
     platforms.create(50, 250, 'platform');
     platforms.create(750, 220, 'platform');
 
-    player = this.physics.add.sprite(100, 450, 'adventurer').setSize(25, 37).setScale(2);
+    player = this.physics.add.sprite(100, 450, 'adventurer').setSize(25, 34).setScale(2);
     console.log(player);
     player.setCollideWorldBounds(true);
 
@@ -119,11 +129,13 @@ function update ()
     }
     else
     {
-        player.anims.play('idle', true);
         player.setVelocityX(0);
+        if (!airborne) {
+            player.anims.play('idle', true);
+        }
     }
 
-    if ((cursors.up.isDown || keyW.isDown || cursors.space.isDown) && player.body.touching.down)
+    if ((cursors.up.isDown || keyW.isDown || cursors.space.isDown) && !airborne)
     {
         player.setVelocityY(-530);
     }
