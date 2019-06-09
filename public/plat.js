@@ -8,7 +8,7 @@ attackDuration = 500;
 moveSpeedNormal = 360;
 jumpSpeedNormal = 560;
 tickNumber = 0;
-controlsString = 'MOVE=WASD ATTCK=QER CROUCH=C,S';
+controlsString = 'MOVE=WASD ATTCK=QER CROUCH=C,S HIDE=Z';
 
 hiScore = {
     name: 'noname',
@@ -96,6 +96,7 @@ function create ()
     player.isAttacking = false;
     player.name = getUrlParameter('name');
     player.shouldTrackStats = player.name.length > 0;
+    player.shouldShowText = true;
     player.jumpScore = 0;
     var particles = this.add.particles('red');
 
@@ -107,13 +108,20 @@ function create ()
 
     this.physics.add.collider(player, platforms);
 
+    fontObj = { fontFamily: '"Roboto Condensed"', fontSize:'24px' };
     // controls
-    this.add.text(0, 0, controlsString, { fontFamily: '"Roboto Condensed"', fontSize:'24px' });
-    hiScoreText = this.add.text(0, 40, `hi score: ${hiScore.name} => ${hiScore.count}`,
-        { fontFamily: '"Roboto Condensed"', fontSize:'24px' });
-    jumpScore = this.add.text(0, 80, `jump score: ${player.jumpScore}`,
-        { fontFamily: '"Roboto Condensed"', fontSize:'24px' });
+    controlsText = this.add.text(0, 0, controlsString, fontObj);
+    hiScoreText = this.add.text(0, 40, `hi score: ${hiScore.name} => ${hiScore.count}`, fontObj);
+    jumpScoreText = this.add.text(0, 80, `jump score: ${player.jumpScore}`, fontObj);
+    labels = [controlsText, hiScoreText, jumpScoreText];
     pollMaxJumps();
+    this.input.keyboard.on('keydown', function (eventName, event) {
+        if (eventName.key === 'z') {
+            eventName.stopImmediatePropagation();
+            player.shouldShowText = !player.shouldShowText;
+            updateLabels();
+        }
+    });
 }
 
 function bindAttack(condition, animationName) {
@@ -124,10 +132,14 @@ function bindAttack(condition, animationName) {
     }
 }
 
-function updateScoreLabels() {
+function updateLabels() {
     hiScoreText.setText(`hi score: ${hiScore.name} => ${hiScore.count}`);
     warning = player.shouldTrackStats ? '' : ' (UNTRACKERD: add ?name=<name> to url)';
-    jumpScore.setText(`jump score: ${player.jumpScore}${warning}`);
+    jumpScoreText.setText(`jump score: ${player.jumpScore}${warning}`);
+    labels.forEach(function(text) {
+      text.setVisible(player.shouldShowText);
+    });
+
 }
 
 // random name tries to set max score (count)
@@ -143,7 +155,7 @@ function trySetMaxJumps(name, count) {
             count: count
         };
     }
-    updateScoreLabels();
+    updateLabels();
 
 }
 
@@ -177,7 +189,7 @@ function jump() {
         // means no db reads or writes for this player
         player.jumpScore += 1;
     }
-    updateScoreLabels();
+    updateLabels();
 }
 
 function update()
@@ -255,7 +267,6 @@ function update()
     bindAttack(shouldSlash, 'attack_slash');
     bindAttack(keyE.isDown, 'attack_overhead');
     bindAttack(keyR.isDown, 'attack_uppercut');
-
 
     tickNumber += 1;
     // ~ 9sec per 1k ticks
