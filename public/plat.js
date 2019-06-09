@@ -172,6 +172,8 @@ function pollMaxJumps() {
 function jump() {
     // < 0 but accounting for float error
     if (player.body.velocity.y < -5) {
+        // TODO: add proper listener and do eventName.stopImmediatePropagation();
+        // istead of this garbage
         console.log('already started jumping');
         return;
     }
