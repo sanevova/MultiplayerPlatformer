@@ -7,7 +7,14 @@ world = {
 attackDuration = 500;
 moveSpeedNormal = 360;
 jumpSpeedNormal = 560;
+tickNumber = 0;
 controlsString = 'MOVE=WASD ATTCK=QER CROUCH=C';
+
+hiScore = {
+    name: 'noname',
+    count: 0
+};
+
 var config = {
     type: Phaser.AUTO,
     width: world.width,
@@ -87,6 +94,9 @@ function create ()
     console.log(player);
     player.setCollideWorldBounds(true);
     player.isAttacking = false;
+    player.name = getUrlParameter('name');
+    player.shouldTrackStats = player.name.length > 0;
+    player.jumpScore = 0;
     var particles = this.add.particles('red');
 
 
@@ -99,6 +109,11 @@ function create ()
 
     // controls
     this.add.text(0, 0, controlsString, { fontFamily: '"Roboto Condensed"', fontSize:'24px' });
+    hiScoreText = this.add.text(0, 40, `hi score: ${hiScore.name} => ${hiScore.count}`,
+        { fontFamily: '"Roboto Condensed"', fontSize:'24px' });
+    jumpScore = this.add.text(0, 80, `jump score: ${player.jumpScore}`,
+        { fontFamily: '"Roboto Condensed"', fontSize:'24px' });
+    pollMaxJumps();
 }
 
 function bindAttack(condition, animationName) {
@@ -109,7 +124,48 @@ function bindAttack(condition, animationName) {
     }
 }
 
-function update ()
+// random name tries to set max score (count)
+function trySetMaxJumps(name, count) {
+    console.log('got jumps for max', name, count);
+    if (name === player.name) {
+        player.jumpScore = count;
+    }
+    if (count > hiScore.count) {
+        console.log('INSIDEW', count, hiScore.count);
+        hiScore = {
+            name: name,
+            count: count
+        };
+        hiScoreText.setText(`hi score: ${hiScore.name} => ${hiScore.count}`);
+    }
+    displayScore = player.shouldTrackStats ? player.jumpScore : 'add ?name=<name> to url'
+    jumpScore.setText(`jump score: ${displayScore}`);
+}
+
+function pollMaxJumps() {
+    console.log('polling');
+    console.log('polling max');
+    readMax(trySetMaxJumps);
+    if (player.shouldTrackStats) {
+        console.log('polling', name);
+        read(player.name, trySetMaxJumps);
+    }
+}
+
+function jump() {
+    player.setVelocityY(-jumpSpeedNormal);
+    if (!player.shouldTrackStats) {
+        return;
+    }
+    // bump jump count
+    read(player.name, (name, count) => {
+        player.jumpScore = count + 1;
+        write(name, player.jumpScore);
+        trySetMaxJumps(name, player.jumpScore);
+    })
+}
+
+function update()
 {
     // state
     airborne = !player.body.touching.down;
@@ -141,8 +197,7 @@ function update ()
         }
     }
 
-    if (shouldMoveLeft)
-    {
+    if (shouldMoveLeft) {
         player.setVelocityX(-moveSpeed);
 
         player.flipX = 1;
@@ -150,16 +205,14 @@ function update ()
             player.anims.play('run', true);
         }
     }
-    else if (shouldMoveRight)
-    {
+    else if (shouldMoveRight) {
         player.setVelocityX(moveSpeed);
         player.flipX = 0;
         if (shouldAnimateMovement) {
             player.anims.play('run', true);
         }
     }
-    else
-    {
+    else {
         player.setVelocityX(0);
         if (shouldAnimateMovement) {
             player.anims.play('idle', true);
@@ -167,9 +220,8 @@ function update ()
     }
 
     // jump
-    if (shouldJump)
-    {
-        player.setVelocityY(-jumpSpeedNormal);
+    if (shouldJump) {
+        jump();
     }
 
     // crouch
@@ -188,4 +240,18 @@ function update ()
     bindAttack(keyE.isDown, 'attack_overhead');
     bindAttack(keyR.isDown, 'attack_uppercut');
 
+
+    tickNumber += 1;
+    // ~ 9sec per 1k ticks
+    if (tickNumber % 2000 === 0) {
+        console.log('2000 ticks');
+        pollMaxJumps();
+    }
 }
+
+function getUrlParameter(name) {
+    name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+    var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+    var results = regex.exec(location.search);
+    return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+};
