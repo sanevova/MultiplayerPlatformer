@@ -8,7 +8,7 @@ attackDuration = 500;
 moveSpeedNormal = 360;
 jumpSpeedNormal = 560;
 tickNumber = 0;
-controlsString = 'MOVE=WASD ATTCK=QER CROUCH=C';
+controlsString = 'MOVE=WASD ATTCK=QER CROUCH=C,S';
 
 hiScore = {
     name: 'noname',
@@ -124,11 +124,18 @@ function bindAttack(condition, animationName) {
     }
 }
 
+function updateScoreLabels() {
+    hiScoreText.setText(`hi score: ${hiScore.name} => ${hiScore.count}`);
+    warning = player.shouldTrackStats ? '' : ' (UNTRACKERD: add ?name=<name> to url)';
+    jumpScore.setText(`jump score: ${player.jumpScore}${warning}`);
+}
+
 // random name tries to set max score (count)
 function trySetMaxJumps(name, count) {
     console.log('got jumps for max', name, count);
-    if (name === player.name) {
+    if (player.shouldTrackStats && name === player.name && count > player.count) {
         player.jumpScore = count;
+        console.log('adding 1 set max');
     }
     if (count > hiScore.count) {
         console.log('INSIDEW', count, hiScore.count);
@@ -136,10 +143,9 @@ function trySetMaxJumps(name, count) {
             name: name,
             count: count
         };
-        hiScoreText.setText(`hi score: ${hiScore.name} => ${hiScore.count}`);
     }
-    displayScore = player.shouldTrackStats ? player.jumpScore : 'add ?name=<name> to url'
-    jumpScore.setText(`jump score: ${displayScore}`);
+    updateScoreLabels();
+
 }
 
 function pollMaxJumps() {
@@ -153,26 +159,39 @@ function pollMaxJumps() {
 }
 
 function jump() {
-    player.setVelocityY(-jumpSpeedNormal);
-    if (!player.shouldTrackStats) {
+    // < 0 but accounting for float error
+    if (player.body.velocity.y < -5) {
+        console.log('already started jumping');
         return;
     }
-    // bump jump count
-    read(player.name, (name, count) => {
-        player.jumpScore = count + 1;
-        write(name, player.jumpScore);
-        trySetMaxJumps(name, player.jumpScore);
-    })
+    console.log('jumping');
+    player.setVelocityY(-jumpSpeedNormal);
+    // stats
+    if (player.shouldTrackStats) {
+        // bump jump count
+        read(player.name, (name, count) => {
+            player.jumpScore = count + 1;
+            console.log('adding 1 in read callback');
+            write(name, player.jumpScore);
+            trySetMaxJumps(name, player.jumpScore);
+        });
+    } else {
+        // means no db reads or writes
+        player.jumpScore += 1;
+        console.log('adding 1 no tracking');
+    }
+    updateScoreLabels();
 }
 
 function update()
 {
     // state
     airborne = !player.body.touching.down;
+    moveSpeed = player.isCrouching ? moveSpeedNormal / 3 : moveSpeedNormal;
     shouldAnimateMovement = !airborne && !player.isAttacking;
-    moveSpeed = player.isCrouching ? moveSpeedNormal / 2 : moveSpeedNormal;
 
     // movement
+    shouldCrouch = (keyC.isDown || keyS.isDown || keyCtrl.isDown) && shouldAnimateMovement
     shouldMoveLeft = cursors.left.isDown || keyA.isDown
     shouldMoveRight = cursors.right.isDown || keyD.isDown;
     shouldJump = (cursors.up.isDown || keyW.isDown || cursors.space.isDown) && !airborne;
@@ -225,7 +244,7 @@ function update()
     }
 
     // crouch
-    if ((keyC.isDown || keyCtrl.isDown) && shouldAnimateMovement) {
+    if (shouldCrouch) {
         player.isCrouching = true;
         player.anims.play('crouch', true);
     } else {
