@@ -133,9 +133,8 @@ function updateScoreLabels() {
 // random name tries to set max score (count)
 function trySetMaxJumps(name, count) {
     console.log('got jumps for max', name, count);
-    if (player.shouldTrackStats && name === player.name && count > player.count) {
+    if (player.shouldTrackStats && name === player.name && count > player.jumpScore) {
         player.jumpScore = count;
-        console.log('adding 1 set max');
     }
     if (count > hiScore.count) {
         console.log('INSIDEW', count, hiScore.count);
@@ -171,14 +170,12 @@ function jump() {
         // bump jump count
         read(player.name, (name, count) => {
             player.jumpScore = count + 1;
-            console.log('adding 1 in read callback');
             write(name, player.jumpScore);
             trySetMaxJumps(name, player.jumpScore);
         });
     } else {
-        // means no db reads or writes
+        // means no db reads or writes for this player
         player.jumpScore += 1;
-        console.log('adding 1 no tracking');
     }
     updateScoreLabels();
 }
