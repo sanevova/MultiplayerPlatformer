@@ -71,6 +71,13 @@ io.on('connection', (socket) => {
     socket.on('on_player_slash', (player) => {
         socket.broadcast.emit('player_did_slash', player);
     });
+    socket.on('on_sync_pos', (player) => {
+        aPlayer = game.players.find(x => x.name === player.name);
+        if (aPlayer) {
+            aPlayer = player;
+            socket.broadcast.emit('did_sync_pos', player);
+        }
+    });
 
 
   // test

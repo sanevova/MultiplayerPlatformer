@@ -188,6 +188,12 @@ function configureSocketEvents() {
         newPlayerObj.anims.play('idle', true);
         game.players.push(newPlayerObj);
     });
+    socket.on('did_sync_pos', (playerData) => {
+        console.log('got pos sync!', playerData);
+        aPlayer = findPlayer(playerData.name);
+        aPlayer.setPosition(playerData.pos.x, playerData.pos.y);
+    });
+
     socket.on('player_did_jump', (jumpingPlayerData) => {
         // add game object for new player
         jumpingPlayer = findPlayer(jumpingPlayerData.name);
@@ -419,10 +425,15 @@ function update()
     bindAttack(player, keyR.isDown, 'attack_uppercut');
 
     tickNumber += 1;
-    // ~ 9sec per 1k ticks
-    if (tickNumber % 2000 === 0 && player.shouldTrackStats) {
-        console.log('2000 ticks', new Date());
-        // pollMaxJumps();
+    // ~ 8sec per 1k ticks
+    if (tickNumber % 500 === 0) {
+        socket.emit('on_sync_pos', {
+            name: player.name,
+            pos: {
+                x: player.x,
+                y: player.y
+            }
+        });
     }
 
     player.didCrouch = shouldCrouch;
