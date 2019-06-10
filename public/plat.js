@@ -95,8 +95,8 @@ function create ()
     player.setCollideWorldBounds(true);
     player.isAttacking = false;
     player.name = getUrlParameter('name');
-    player.shouldTrackStats = player.name.length > 0;
-    player.shouldShowText = true;
+    player.shouldTrackStats = false; //player.name.length > 0;
+    player.shouldShowText = false;
     player.jumpScore = 0;
     var particles = this.add.particles('red');
 
@@ -114,7 +114,10 @@ function create ()
     hiScoreText = this.add.text(0, 40, `hi score: ${hiScore.name} => ${hiScore.count}`, fontObj);
     jumpScoreText = this.add.text(0, 80, `jump score: ${player.jumpScore}`, fontObj);
     labels = [controlsText, hiScoreText, jumpScoreText];
-    pollMaxJumps();
+    if (player.shouldTrackStats) {
+        pollMaxJumps();
+    }
+    updateLabels();
     this.input.keyboard.on('keydown', function (eventName, event) {
         if (eventName.key === 'z') {
             eventName.stopImmediatePropagation();
@@ -130,68 +133,6 @@ function bindAttack(condition, animationName) {
         setTimeout(() => {player.isAttacking = false;}, attackDuration);
         player.anims.play(animationName, false);
     }
-}
-
-function updateLabels() {
-    hiScoreText.setText(`hi score: ${hiScore.name} => ${hiScore.count}`);
-    warning = player.shouldTrackStats ? '' : ' (UNTRACKERD: add ?name=<name> to url)';
-    jumpScoreText.setText(`jump score: ${player.jumpScore}${warning}`);
-    labels.forEach(function(text) {
-      text.setVisible(player.shouldShowText);
-    });
-
-}
-
-// random name tries to set max score (count)
-function trySetMaxJumps(name, count) {
-    console.log('got jumps for max', name, count);
-    if (player.shouldTrackStats && name === player.name && count > player.jumpScore) {
-        player.jumpScore = count;
-    }
-    if (count > hiScore.count) {
-        console.log('INSIDEW', count, hiScore.count);
-        hiScore = {
-            name: name,
-            count: count
-        };
-    }
-    updateLabels();
-
-}
-
-function pollMaxJumps() {
-    console.log('polling');
-    console.log('polling max');
-    readMax(trySetMaxJumps);
-    if (player.shouldTrackStats) {
-        console.log('polling', name);
-        read(player.name, trySetMaxJumps);
-    }
-}
-
-function jump() {
-    // < 0 but accounting for float error
-    if (player.body.velocity.y < -5) {
-        // TODO: add proper listener and do eventName.stopImmediatePropagation();
-        // istead of this garbage
-        console.log('already started jumping');
-        return;
-    }
-    console.log('jumping');
-    player.setVelocityY(-jumpSpeedNormal);
-    // stats
-    if (player.shouldTrackStats) {
-        // bump jump count
-        read(player.name, (name, count) => {
-            player.jumpScore = count + 1;
-            write(name, player.jumpScore);
-            trySetMaxJumps(name, player.jumpScore);
-        });
-    } else {
-        // means no db reads or writes for this player
-        player.jumpScore += 1;
-    }
-    updateLabels();
 }
 
 function update()
@@ -251,7 +192,8 @@ function update()
 
     // jump
     if (shouldJump) {
-        jump();
+        // jumpStats();
+        player.setVelocityY(-jumpSpeedNormal);
     }
 
     // crouch
@@ -272,10 +214,20 @@ function update()
 
     tickNumber += 1;
     // ~ 9sec per 1k ticks
-    if (tickNumber % 2000 === 0) {
+    if (tickNumber % 2000 === 0 && player.shouldTrackStats) {
         console.log('2000 ticks');
         pollMaxJumps();
     }
+}
+
+function updateLabels() {
+    hiScoreText.setText(`hi score: ${hiScore.name} => ${hiScore.count}`);
+    warning = player.shouldTrackStats ? '' : ' (UNTRACKERD: add ?name=<name> to url)';
+    jumpScoreText.setText(`jump score: ${player.jumpScore}${warning}`);
+    labels.forEach(function(text) {
+      text.setVisible(player.shouldShowText);
+    });
+
 }
 
 function getUrlParameter(name) {

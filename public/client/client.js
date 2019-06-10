@@ -1,15 +1,13 @@
 function main() {
-
-
   if (window.location.hostname === 'localhost') {
-  //     rhost = 'localhost';
-  //     rport = 3001;
-  // } else {
-      rhost = 'ec2-35-177-47-61.eu-west-2.compute.amazonaws.com';
+      rhost = 'localhost';
+      rport = 3001;
+  } else {
+      rhost = 'ec2-3-8-134-205.eu-west-2.compute.amazonaws.com';
       rport = 8303;
   }
 
-  var socket = io(`https://${rhost}:${rport}`);
+  var socket = io(`http://${rhost}:${rport}`,  {secure: true});
 
   socket.on('new YUNG', (data) => {
     console.log('server recevd yung connected', data.name);
