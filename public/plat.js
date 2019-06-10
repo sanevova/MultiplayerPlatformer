@@ -47,6 +47,8 @@ var score = 0;
 var scoreText;
 var socket;
 var scene;
+var myname;
+
 
 var game = new Phaser.Game(config);
 
@@ -70,6 +72,7 @@ function preload ()
     keyE = this.input.keyboard.addKey('E');
     keyR = this.input.keyboard.addKey('R');
     keyC = this.input.keyboard.addKey('C');
+    keyK = this.input.keyboard.addKey('K');
     keyCtrl = this.input.keyboard.addKey('Control');
 
     scene = this;
@@ -95,6 +98,9 @@ function createPlayerFromPlayerData(playerData) {
     newPlayer.shouldTrackStats = false; //newPlayer.name.length > 0;
     newPlayer.shouldShowText = false;
     newPlayer.jumpScore = 0;
+    newPlayer.jump = function() {
+        this.setVelocityY(-jumpSpeedNormal);
+    };
     scene.physics.add.collider(newPlayer, scene.game.platforms);
     // diplay player name
     nameTag = scene.add.text(playerData.pos.x, playerData.pos.y, playerData.name, nameFont);
@@ -113,18 +119,32 @@ function createMyPlayer() {
             x: 100,
             y: 450
         }
-    })
+    });
+    myname = player.name;
     socket = connect_as(playerData(player));
     return player;
 }
 
 function configureSocketEvents() {
-    socket.on('state', (m) => {
-        console.log('state!', m);
+    socket.on('did_connect', (gameState) => {
+        console.log('connected! other players:', gameState);
+        // add game objects for other players
+        game.players.concat(gameState.otherPlayers.map(
+            (otherPlayer) => createPlayerFromPlayerData(otherPlayer)
+        ));
     });
     socket.on('player_did_connect', (newPlayer) => {
         console.log('new player connected!', newPlayer);
+        // add game object for new player
         game.players.push(createPlayerFromPlayerData(newPlayer));
+    });
+    socket.on('player_did_jump', (jumpingPlayerData) => {
+        console.log('other player jump!', jumpingPlayerData);
+        // add game object for new player
+        jumpingPlayer = game.players.find(
+            (aPlayer) => aPlayer.name === jumpingPlayerData.name
+        );
+        jumpingPlayer.jump();
     });
 }
 
@@ -180,6 +200,9 @@ function bindAttack(condition, animationName) {
 
 function update()
 {
+    if (keyK.isDown) {
+        socket.emit('kick_all');
+    }
     player.nameTag.setX(player.x - player.body.width / 2);
     // player.nameTag.setY(player.y);
     player.nameTag.setY(player.y - player.body.height);
@@ -240,7 +263,12 @@ function update()
     // jump
     if (shouldJump) {
         // jumpStats();
-        player.setVelocityY(-jumpSpeedNormal);
+        player.jump();
+        if (player.name === myname) {
+            socket.emit('on_player_jump', {
+                name: player.name
+            });
+        }
     }
 
     // crouch
