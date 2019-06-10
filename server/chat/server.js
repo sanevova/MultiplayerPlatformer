@@ -33,7 +33,9 @@ console.log("ROFL");
 io.on('connection', (socket) => {
 
     socket.on('on_player_connect', (player) => {
-        players.push(player);
+        game.players.push(player);
+        // notify everybody about new player
+        socket.emit('state', 'haha');
         socket.broadcast.emit('player_did_connect', player);
     });
 

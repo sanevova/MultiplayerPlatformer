@@ -8,7 +8,14 @@ attackDuration = 500;
 moveSpeedNormal = 360;
 jumpSpeedNormal = 560;
 tickNumber = 0;
+
 controlsString = 'MOVE=WASD ATTCK=QER CROUCH=C,S HIDE=Z';
+nameFont = {
+    fontFamily: '"Roboto Condensed"',
+    fontSize: '32px',
+    fontStyle: 'bold',
+    fill: "#c51b7d"
+};
 
 hiScore = {
     name: 'noname',
@@ -35,19 +42,21 @@ var config = {
 
 var player;
 var stars;
-var platforms;
 var cursors;
 var score = 0;
 var scoreText;
+var socket;
+var scene;
 
 var game = new Phaser.Game(config);
+
+game.players = [];
 
 function preload ()
 {
     console.log('preload');
 
     platform_image = this.load.image('platform', 'assets/blocks/platform.png');
-    console.log('img', platform_image);
     this.load.spritesheet('adventurer', 'assets/adventurer/adventurer-sheet.png', { frameWidth: 50, frameHeight: 37 });
 
     this.load.image('sky', 'assets/blocks/space3.png');
@@ -63,68 +72,95 @@ function preload ()
     keyC = this.input.keyboard.addKey('C');
     keyCtrl = this.input.keyboard.addKey('Control');
 
+    scene = this;
 }
 
-function create ()
-{
+function playerData(player) {
+    return {
+        name: player.name,
+        pos: {
+            x: player.x,
+            y: player.y
+        }
+    };
+}
+
+function createPlayerFromPlayerData(playerData) {
+    // player creation
+    console.log('creating from', playerData);
+    newPlayer = scene.physics.add.sprite(playerData.pos.x, playerData.pos.y, 'adventurer').setSize(25, 34).setScale(2);
+    newPlayer.setCollideWorldBounds(true);
+    newPlayer.isAttacking = false;
+    newPlayer.name = playerData.name;
+    newPlayer.shouldTrackStats = false; //newPlayer.name.length > 0;
+    newPlayer.shouldShowText = false;
+    newPlayer.jumpScore = 0;
+    scene.physics.add.collider(newPlayer, scene.game.platforms);
+    // diplay player name
+    nameTag = scene.add.text(playerData.pos.x, playerData.pos.y, playerData.name, nameFont);
+    newPlayer.nameTag = nameTag;
+    return newPlayer;
+}
+
+function randname() {
+    return Math.random().toString(36).substring(7);
+}
+
+function createMyPlayer() {
+    player = createPlayerFromPlayerData({
+        name:  getUrlParameter('name') || randname(),
+        pos: {
+            x: 100,
+            y: 450
+        }
+    })
+    socket = connect_as(playerData(player));
+    return player;
+}
+
+function configureSocketEvents() {
+    socket.on('state', (m) => {
+        console.log('state!', m);
+    });
+    socket.on('player_did_connect', (newPlayer) => {
+        console.log('new player connected!', newPlayer);
+        game.players.push(createPlayerFromPlayerData(newPlayer));
+    });
+}
+
+function create() {
     console.log('create');
 
     // map creation
     this.add.image(400, 300, 'sky');
 
-    platforms = this.physics.add.staticGroup();
+    this.game.platforms = this.physics.add.staticGroup();
 
-    platforms.create(100, 528, 'platform').refreshBody();
-    platforms.create(300, 528, 'platform').refreshBody();
-    platforms.create(500, 528, 'platform').refreshBody();
-    platforms.create(700, 528, 'platform').refreshBody();
-    platforms.create(1000, 628, 'platform').refreshBody();
-    platforms.create(1400, 828, 'platform').refreshBody();
-    platforms.create(1200, 998, 'platform').refreshBody();
-    platforms.create(900, 1100, 'platform').refreshBody();
+    this.game.platforms.create(100, 528, 'platform').refreshBody();
+    this.game.platforms.create(300, 528, 'platform').refreshBody();
+    this.game.platforms.create(500, 528, 'platform').refreshBody();
+    this.game.platforms.create(700, 528, 'platform').refreshBody();
+    this.game.platforms.create(1000, 628, 'platform').refreshBody();
+    this.game.platforms.create(1400, 828, 'platform').refreshBody();
+    this.game.platforms.create(1200, 998, 'platform').refreshBody();
+    this.game.platforms.create(900, 1100, 'platform').refreshBody();
     for (i = 0; i < 20; ++i) {
-        platforms.create(200 * i + 100, world.height - 60, 'platform').refreshBody();
+        this.game.platforms.create(200 * i + 100, world.height - 60, 'platform').refreshBody();
     }
-    platforms.create(600, 370, 'platform');
-    platforms.create(50, 250, 'platform');
-    platforms.create(750, 220, 'platform');
+    this.game.platforms.create(600, 370, 'platform');
+    this.game.platforms.create(50, 250, 'platform');
+    this.game.platforms.create(750, 220, 'platform');
 
-    // player creation
-    player = this.physics.add.sprite(100, 450, 'adventurer').setSize(25, 34).setScale(2);
-    console.log(player);
-    player.setCollideWorldBounds(true);
-    player.isAttacking = false;
-    player.name = getUrlParameter('name');
-    player.shouldTrackStats = false; //player.name.length > 0;
-    player.shouldShowText = false;
-    player.jumpScore = 0;
-    var particles = this.add.particles('red');
-
+    player = createMyPlayer();
+    configureSocketEvents();
+    // this.physics.add.collider(player, this.game.platforms);
 
     // animations
     loadAnimations(this);
-
     cursors = this.input.keyboard.createCursorKeys();
 
-    this.physics.add.collider(player, platforms);
-
-    fontObj = { fontFamily: '"Roboto Condensed"', fontSize:'24px' };
-    // controls
-    controlsText = this.add.text(0, 0, controlsString, fontObj);
-    hiScoreText = this.add.text(0, 40, `hi score: ${hiScore.name} => ${hiScore.count}`, fontObj);
-    jumpScoreText = this.add.text(0, 80, `jump score: ${player.jumpScore}`, fontObj);
-    labels = [controlsText, hiScoreText, jumpScoreText];
-    if (player.shouldTrackStats) {
-        pollMaxJumps();
-    }
-    updateLabels();
-    this.input.keyboard.on('keydown', function (eventName, event) {
-        if (eventName.key === 'z') {
-            eventName.stopImmediatePropagation();
-            player.shouldShowText = !player.shouldShowText;
-            updateLabels();
-        }
-    });
+    // unimportant stuff
+    createExtra();
 }
 
 function bindAttack(condition, animationName) {
@@ -135,8 +171,19 @@ function bindAttack(condition, animationName) {
     }
 }
 
+// function updatePlayer(player) {
+//     // state
+//     airborne = !player.body.touching.down;
+//     moveSpeed = player.isCrouching ? moveSpeedNormal / 3 : moveSpeedNormal;
+//     shouldAnimateMovement = !airborne && !player.isAttacking;
+// }
+
 function update()
 {
+    player.nameTag.setX(player.x - player.body.width / 2);
+    // player.nameTag.setY(player.y);
+    player.nameTag.setY(player.y - player.body.height);
+
     // state
     airborne = !player.body.touching.down;
     moveSpeed = player.isCrouching ? moveSpeedNormal / 3 : moveSpeedNormal;
@@ -227,7 +274,29 @@ function updateLabels() {
     labels.forEach(function(text) {
       text.setVisible(player.shouldShowText);
     });
+}
 
+function createExtra() {
+    // extra
+
+    fontObj = { fontFamily: '"Roboto Condensed"', fontSize:'24px' };
+    // controls
+    controlsText = scene.add.text(0, 0, controlsString, fontObj);
+    hiScoreText = scene.add.text(0, 40, `hi score: ${hiScore.name} => ${hiScore.count}`, fontObj);
+    jumpScoreText = scene.add.text(0, 80, `jump score: ${player.jumpScore}`, fontObj);
+    labels = [controlsText, hiScoreText, jumpScoreText];
+    if (player.shouldTrackStats) {
+        pollMaxJumps();
+    }
+    updateLabels();
+    scene.input.keyboard.on('keydown', function (eventName, event) {
+        if (eventName.key === 'z') {
+            eventName.stopImmediatePropagation();
+            player.shouldShowText = !player.shouldShowText;
+            updateLabels();
+        }
+    });
+    var particles = scene.add.particles('red');
 }
 
 function getUrlParameter(name) {

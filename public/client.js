@@ -12,6 +12,3 @@ function connect_as(player) {
   socket.emit('on_player_connect', player);
   return socket;
 };
-
-
-// main();
