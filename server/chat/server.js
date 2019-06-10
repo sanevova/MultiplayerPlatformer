@@ -10,6 +10,10 @@ var hostname = os.hostname();
 // aws starts with ip
 var port = hostname.startsWith('ip') ? 8303 : 3001;
 
+var game = {
+    players: []
+};
+
 server.listen(port, () => {
   console.log('Server listening at port %d', port);
 });
@@ -25,19 +29,26 @@ app.use(function(req, res, next) {
    next();
 });
 
-var numUsers = 0;
 console.log("ROFL");
 io.on('connection', (socket) => {
-  var addedUser = false;
 
-  // when the client emits 'new message', this listens and executes
-  socket.on('new message', (data) => {
-    // we tell the client to execute 'new message'
-    socket.broadcast.emit('new message', {
-      username: 'some username',
-      message: data
+    socket.on('on_player_connect', (player) => {
+        players.push(player);
+        socket.broadcast.emit('player_did_connect', player);
     });
-  });
+
+
+
+
+  // test
+  // when the client emits 'new message', this listens and executes
+    socket.on('new message', (data) => {
+        // we tell the client to execute 'new message'
+        socket.broadcast.emit('new message', {
+            username: 'some username',
+            message: data
+        });
+    });
 
   socket.on('YUNG connect', (playerName) => {
       console.log(playerName, 'connected');
