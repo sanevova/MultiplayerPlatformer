@@ -3,7 +3,7 @@ function connect_as(player) {
       rhost = 'localhost';
       rport = 3001;
   } else {
-      rhost = 'ec2-3-8-134-205.eu-west-2.compute.amazonaws.com';
+      rhost = 'ec2-35-178-211-253.eu-west-2.compute.amazonaws.com';
       rport = 8303;
   }
 
