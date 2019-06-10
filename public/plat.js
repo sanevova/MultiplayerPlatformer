@@ -294,13 +294,13 @@ function updatePlayer(aPlayer) {
     aPlayer.moveSpeed = aPlayer.isCrouching ? moveSpeedNormal / 3 : moveSpeedNormal;
     aPlayer.shouldAnimateMovement = !aPlayer.airborne && !aPlayer.isAttacking;
     if (!aPlayer.isAttacking) {
-        if (aPlayer.airborne) {
-            aPlayer.anims.play('jump', true);
-        } else if (aPlayer.isCrouching) {
-            aPlayer.anims.play('crouch', true);
-        } else {
-            aPlayer.anims.play('idle', true);
-        }
+        // if (aPlayer.airborne) {
+        //     aPlayer.anims.play('jump', true);
+        // } else if (aPlayer.isCrouching) {
+        //     aPlayer.anims.play('crouch', true);
+        // } else {
+        //     aPlayer.anims.play('idle', true);
+        // }
     }
 }
 
