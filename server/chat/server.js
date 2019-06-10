@@ -6,7 +6,9 @@ var server = require('http').createServer(app);
 var io = require('socket.io')(server);
 var os = require("os");
 var hostname = os.hostname();
-var port = hostname.startsWith('ec2') ? 8303 : 3001;
+
+// aws starts with ip
+var port = hostname.startsWith('ip') ? 8303 : 3001;
 
 server.listen(port, () => {
   console.log('Server listening at port %d', port);
