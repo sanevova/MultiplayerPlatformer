@@ -99,6 +99,11 @@ function createPlayerFromPlayerData(playerData) {
     newPlayer.shouldShowText = false;
     newPlayer.jumpScore = 0;
     newPlayer.jump = function() {
+        // < 0 but accounting for float error
+        if (player.body.velocity.y < -5) {
+            // already jumping
+            return;
+        }
         this.setVelocityY(-jumpSpeedNormal);
     };
     scene.physics.add.collider(newPlayer, scene.game.platforms);
@@ -129,7 +134,7 @@ function configureSocketEvents() {
     socket.on('did_connect', (gameState) => {
         console.log('connected! other players:', gameState);
         // add game objects for other players
-        game.players.concat(gameState.otherPlayers.map(
+        game.players = game.players.concat(gameState.otherPlayers.map(
             (otherPlayer) => createPlayerFromPlayerData(otherPlayer)
         ));
     });
@@ -208,15 +213,15 @@ function update()
     player.nameTag.setY(player.y - player.body.height);
 
     // state
-    airborne = !player.body.touching.down;
+    player.airborne = !player.body.touching.down;
     moveSpeed = player.isCrouching ? moveSpeedNormal / 3 : moveSpeedNormal;
-    shouldAnimateMovement = !airborne && !player.isAttacking;
+    shouldAnimateMovement = !player.airborne && !player.isAttacking;
 
     // movement
     shouldCrouch = (keyC.isDown || keyS.isDown || keyCtrl.isDown) && shouldAnimateMovement
     shouldMoveLeft = cursors.left.isDown || keyA.isDown
     shouldMoveRight = cursors.right.isDown || keyD.isDown;
-    shouldJump = (cursors.up.isDown || keyW.isDown || cursors.space.isDown) && !airborne;
+    shouldJump = (cursors.up.isDown || keyW.isDown || cursors.space.isDown) && !player.airborne;
     shouldSlash = keyQ.isDown;
 
 
@@ -233,7 +238,7 @@ function update()
         } else {
             // | slash |  jump |
             // |       |       |
-            shouldJump = touchX > world.width / 2  && !airborne;
+            shouldJump = touchX > world.width / 2  && !player.airborne;
             shouldSlash = touchX <= world.width / 2;
         }
     }
@@ -279,7 +284,7 @@ function update()
         player.isCrouching = false;
     }
 
-    if (airborne && !player.isAttacking) {
+    if (player.airborne && !player.isAttacking) {
       player.anims.play('jump', true);
     }
 
