@@ -47,8 +47,30 @@ io.on('connection', (socket) => {
     socket.on('on_player_jump', (player) => {
         socket.broadcast.emit('player_did_jump', player);
     });
-
-
+    socket.on('on_player_crouch', (player) => {
+        socket.broadcast.emit('player_did_crouch', player);
+    });
+    socket.on('on_player_stop_crouch', (player) => {
+        socket.broadcast.emit('player_did_stop_crouch');
+    });
+    socket.on('on_player_moveLeft', (player) => {
+        socket.broadcast.emit('player_did_moveLeft', player);
+    });
+    socket.on('on_player_stop_moveLeft', (player) => {
+        socket.broadcast.emit('player_did_stop_moveLeft', player);
+    });
+    socket.on('on_player_moveRight', (player) => {
+        socket.broadcast.emit('player_did_moveRight', player);
+    });
+    socket.on('on_player_stop_moveRight', (player) => {
+        socket.broadcast.emit('player_did_stop_moveRight', player);
+    });
+    // socket.on('player_Jump', (player) => {
+    //     socket.broadcast.emit('player_did_Jump', player);
+    // });
+    socket.on('on_player_slash', (player) => {
+        socket.broadcast.emit('player_did_slash', player);
+    });
 
 
   // test

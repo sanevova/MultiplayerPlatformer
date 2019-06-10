@@ -100,11 +100,44 @@ function createPlayerFromPlayerData(playerData) {
     newPlayer.jumpScore = 0;
     newPlayer.jump = function() {
         // < 0 but accounting for float error
-        if (player.body.velocity.y < -5) {
+        if (this.body.velocity.y < -5) {
             // already jumping
             return;
         }
         this.setVelocityY(-jumpSpeedNormal);
+    };
+
+    newPlayer.crouch = function() {
+        this.isCrouching = true;
+        this.anims.play('crouch', true);
+    };
+    newPlayer.stopCrouch = function() {
+        this.isCrouching = false;
+    };
+    newPlayer.moveLeft = function() {
+        airborne = !this.body.touching.down;
+        shouldAnimateMovement = !airborne && !this.isAttacking;
+        this.setVelocityX(-this.moveSpeed);
+
+        this.flipX = 1;
+        if (shouldAnimateMovement) {
+            this.anims.play('run', true);
+        }
+    };
+    newPlayer.moveRight = function() {
+        airborne = !this.body.touching.down;
+        shouldAnimateMovement = !airborne && !this.isAttacking;
+        this.setVelocityX(this.moveSpeed);
+        this.flipX = 0;
+        if (shouldAnimateMovement) {
+            this.anims.play('run', true);
+        }
+    };
+    newPlayer.stopMove = function() {
+        this.setVelocityX(0);
+    };
+    newPlayer.slash = function() {
+        bindAttack(this, true, 'attack_slash');
     };
     scene.physics.add.collider(newPlayer, scene.game.platforms);
     // diplay player name
@@ -126,8 +159,15 @@ function createMyPlayer() {
         }
     });
     myname = player.name;
+    game.players.push(player);
     socket = connect_as(playerData(player));
     return player;
+}
+
+function findPlayer(name) {
+    return game.players.find(
+        (aPlayer) => aPlayer.name === name
+    );
 }
 
 function configureSocketEvents() {
@@ -146,11 +186,52 @@ function configureSocketEvents() {
     socket.on('player_did_jump', (jumpingPlayerData) => {
         console.log('other player jump!', jumpingPlayerData);
         // add game object for new player
-        jumpingPlayer = game.players.find(
-            (aPlayer) => aPlayer.name === jumpingPlayerData.name
-        );
-        jumpingPlayer.jump();
+        jumpingPlayer = findPlayer(jumpingPlayerData.name);
+        if (jumpingPlayer) {
+            jumpingPlayer.jump();
+        }
     });
+    socket.on('player_did_crouch', (aPlayer) => {
+        match = findPlayer(aPlayer.name);
+        if (match) {
+            match.crouch();
+        }
+    });
+    socket.on('player_did_stop_crouch', (aPlayer) => {
+        aPlayer.stopCrouch();
+    });
+    socket.on('player_did_moveLeft', (aPlayer) => {
+        match = findPlayer(aPlayer.name);
+        if (match) {
+            match.moveLeft();
+        }
+    });
+    socket.on('player_did_stop_moveLeft', (aPlayer) => {
+        match = findPlayer(aPlayer.name);
+        if (match) {
+            match.stopMove();
+        }
+    });
+    socket.on('player_did_moveRight', (aPlayer) => {
+        match = findPlayer(aPlayer.name);
+        if (match) {
+            match.moveRight();
+        }
+    });
+    socket.on('player_did_stop_moveRight', (aPlayer) => {
+        match = findPlayer(aPlayer.name);
+        if (match) {
+            match.stopMove();
+        }
+    });
+
+    socket.on('player_did_slash', (aPlayer) => {
+        match = findPlayer(aPlayer.name);
+        if (match) {
+            match.slash();
+        }
+    });
+
 }
 
 function create() {
@@ -188,41 +269,67 @@ function create() {
     createExtra();
 }
 
-function bindAttack(condition, animationName) {
-    if (condition && !player.isAttacking) {
-        player.isAttacking = true;
-        setTimeout(() => {player.isAttacking = false;}, attackDuration);
-        player.anims.play(animationName, false);
+function bindAttack(aPlayer, condition, animationName) {
+    if (condition && !aPlayer.isAttacking) {
+        aPlayer.isAttacking = true;
+        setTimeout(() => {aPlayer.isAttacking = false;}, attackDuration);
+        aPlayer.anims.play(animationName, false);
     }
 }
 
-// function updatePlayer(player) {
-//     // state
-//     airborne = !player.body.touching.down;
-//     moveSpeed = player.isCrouching ? moveSpeedNormal / 3 : moveSpeedNormal;
-//     shouldAnimateMovement = !airborne && !player.isAttacking;
-// }
+function updatePlayer(aPlayer) {
+    // console.log('updating', aPlayer.name);
+    aPlayer.nameTag.setX(aPlayer.x - aPlayer.body.width / 2);
+    aPlayer.nameTag.setY(aPlayer.y - aPlayer.body.height);
+
+    // state
+    airborne = !aPlayer.body.touching.down;
+    aPlayer.moveSpeed = aPlayer.isCrouching ? moveSpeedNormal / 3 : moveSpeedNormal;
+    shouldAnimateMovement = !airborne && !aPlayer.isAttacking;
+}
 
 function update()
 {
     if (keyK.isDown) {
         socket.emit('kick_all');
     }
-    player.nameTag.setX(player.x - player.body.width / 2);
-    // player.nameTag.setY(player.y);
-    player.nameTag.setY(player.y - player.body.height);
+
+    game.players.map(updatePlayer);
 
     // state
-    player.airborne = !player.body.touching.down;
+    airborne = !player.body.touching.down;
     moveSpeed = player.isCrouching ? moveSpeedNormal / 3 : moveSpeedNormal;
-    shouldAnimateMovement = !player.airborne && !player.isAttacking;
+    // moveSpeed = aPlayer.moveSpeed;
+    shouldAnimateMovement = !airborne && !player.isAttacking;
 
     // movement
     shouldCrouch = (keyC.isDown || keyS.isDown || keyCtrl.isDown) && shouldAnimateMovement
     shouldMoveLeft = cursors.left.isDown || keyA.isDown
     shouldMoveRight = cursors.right.isDown || keyD.isDown;
-    shouldJump = (cursors.up.isDown || keyW.isDown || cursors.space.isDown) && !player.airborne;
+    shouldJump = (cursors.up.isDown || keyW.isDown || cursors.space.isDown) && !airborne;
     shouldSlash = keyQ.isDown;
+
+    if (shouldCrouch && !player.didCrouch) {
+        socket.emit('on_player_crouch', {name: player.name});
+    } else if (!shouldCrouch && player.didCrouch) {
+        socket.emit('on_player_stop_crouch', {name: player.name});
+    }
+    if (shouldMoveLeft && !player.didMoveLeft) {
+        socket.emit('on_player_moveLeft', {name: player.name});
+    } else if (!shouldMoveLeft && player.didMoveLeft) {
+        socket.emit('on_player_stop_moveLeft', {name: player.name});
+    }
+    if (shouldMoveRight && !player.didMoveRight) {
+        socket.emit('on_player_moveRight', {name: player.name});
+    } else if (!shouldMoveRight && player.didMoveRight) {
+        socket.emit('on_player_stop_moveRight', {name: player.name});
+    }
+    if (shouldSlash && !player.didSlash) {
+        socket.emit('on_player_slash', {name: player.name});
+    }
+
+
+
 
 
     // touch contorls
@@ -238,7 +345,7 @@ function update()
         } else {
             // | slash |  jump |
             // |       |       |
-            shouldJump = touchX > world.width / 2  && !player.airborne;
+            shouldJump = touchX > world.width / 2  && !airborne;
             shouldSlash = touchX <= world.width / 2;
         }
     }
@@ -284,20 +391,26 @@ function update()
         player.isCrouching = false;
     }
 
-    if (player.airborne && !player.isAttacking) {
+    if (airborne && !player.isAttacking) {
       player.anims.play('jump', true);
     }
 
-    bindAttack(shouldSlash, 'attack_slash');
-    bindAttack(keyE.isDown, 'attack_overhead');
-    bindAttack(keyR.isDown, 'attack_uppercut');
+    bindAttack(player, shouldSlash, 'attack_slash');
+    bindAttack(player, keyE.isDown, 'attack_overhead');
+    bindAttack(player, keyR.isDown, 'attack_uppercut');
 
     tickNumber += 1;
     // ~ 9sec per 1k ticks
     if (tickNumber % 2000 === 0 && player.shouldTrackStats) {
-        console.log('2000 ticks');
-        pollMaxJumps();
+        console.log('2000 ticks', new Date());
+        // pollMaxJumps();
     }
+
+    player.didCrouch = shouldCrouch;
+    player.didMoveLeft = shouldMoveLeft;
+    player.didMoveRight = shouldMoveRight;
+    player.didJump = shouldJump;
+    player.didSlash = shouldSlash;
 }
 
 function updateLabels() {
