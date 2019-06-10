@@ -29,4 +29,39 @@ function create ()
     emitter.setPosition(400, 300);
     emitter.setSpeed(200);
     emitter.setBlendMode(Phaser.BlendModes.ADD).setScale(0.2);
+    setupSocket();
+}
+
+function setupSocket() {
+    socket = new WebSocket('ws://localhost:8765');
+    console.log(socket);
+    socket.onopen = function() {
+                  // Web Socket is connected, send data using send()
+                  console.log(socket);
+                  socket.send("close");
+                  // socket.send("Message to send1");
+                  socket.send("Message to send2");
+                  console.log("Message is sent...");
+                  console.log(socket);
+                  return true;
+               };
+    socket.onmessage = function(e){
+        console.log(socket);
+       var server_message = e.data;
+       console.log('onmessage', server_message);
+       return false;
+    }
+
+    socket.onclose = function(event) {
+      if (event.wasClean) {
+        alert(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
+      } else {
+        // e.g. server process killed or network down
+        // event.code is usually 1006 in this case
+        alert('[close] Connection died');
+      }
+    };
+    socket.onerror = function(error) {
+      alert(`[error] ${error.message}`);
+    };
 }
