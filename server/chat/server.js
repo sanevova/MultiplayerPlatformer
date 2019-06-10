@@ -51,7 +51,7 @@ io.on('connection', (socket) => {
         socket.broadcast.emit('player_did_crouch', player);
     });
     socket.on('on_player_stop_crouch', (player) => {
-        socket.broadcast.emit('player_did_stop_crouch');
+        socket.broadcast.emit('player_did_stop_crouch', player);
     });
     socket.on('on_player_moveLeft', (player) => {
         socket.broadcast.emit('player_did_moveLeft', player);

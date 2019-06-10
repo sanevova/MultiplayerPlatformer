@@ -98,6 +98,10 @@ function createPlayerFromPlayerData(playerData) {
     newPlayer.shouldTrackStats = false; //newPlayer.name.length > 0;
     newPlayer.shouldShowText = false;
     newPlayer.jumpScore = 0;
+
+    // collide with platforms
+    scene.physics.add.collider(newPlayer, scene.game.platforms);
+
     newPlayer.jump = function() {
         // < 0 but accounting for float error
         if (this.body.velocity.y < -5) {
@@ -106,7 +110,6 @@ function createPlayerFromPlayerData(playerData) {
         }
         this.setVelocityY(-jumpSpeedNormal);
     };
-
     newPlayer.crouch = function() {
         this.isCrouching = true;
         this.anims.play('crouch', true);
@@ -135,11 +138,11 @@ function createPlayerFromPlayerData(playerData) {
     };
     newPlayer.stopMove = function() {
         this.setVelocityX(0);
+        this.anims.play('idle', true);
     };
     newPlayer.slash = function() {
         bindAttack(this, true, 'attack_slash');
     };
-    scene.physics.add.collider(newPlayer, scene.game.platforms);
     // diplay player name
     nameTag = scene.add.text(playerData.pos.x, playerData.pos.y, playerData.name, nameFont);
     newPlayer.nameTag = nameTag;
@@ -181,10 +184,11 @@ function configureSocketEvents() {
     socket.on('player_did_connect', (newPlayer) => {
         console.log('new player connected!', newPlayer);
         // add game object for new player
-        game.players.push(createPlayerFromPlayerData(newPlayer));
+        newPlayerObj = createPlayerFromPlayerData(newPlayer);
+        newPlayerObj.anims.play('idle', true);
+        game.players.push(newPlayerObj);
     });
     socket.on('player_did_jump', (jumpingPlayerData) => {
-        console.log('other player jump!', jumpingPlayerData);
         // add game object for new player
         jumpingPlayer = findPlayer(jumpingPlayerData.name);
         if (jumpingPlayer) {
@@ -198,7 +202,10 @@ function configureSocketEvents() {
         }
     });
     socket.on('player_did_stop_crouch', (aPlayer) => {
-        aPlayer.stopCrouch();
+        match = findPlayer(aPlayer.name);
+        if (match) {
+            match.stopCrouch();
+        }
     });
     socket.on('player_did_moveLeft', (aPlayer) => {
         match = findPlayer(aPlayer.name);
@@ -283,9 +290,18 @@ function updatePlayer(aPlayer) {
     aPlayer.nameTag.setY(aPlayer.y - aPlayer.body.height);
 
     // state
-    airborne = !aPlayer.body.touching.down;
+    aPlayer.airborne = !aPlayer.body.touching.down;
     aPlayer.moveSpeed = aPlayer.isCrouching ? moveSpeedNormal / 3 : moveSpeedNormal;
-    shouldAnimateMovement = !airborne && !aPlayer.isAttacking;
+    aPlayer.shouldAnimateMovement = !aPlayer.airborne && !aPlayer.isAttacking;
+    if (!aPlayer.isAttacking) {
+        if (aPlayer.airborne) {
+            aPlayer.anims.play('jump', true);
+        } else if (aPlayer.isCrouching) {
+            aPlayer.anims.play('crouch', true);
+        } else {
+            aPlayer.anims.play('idle', true);
+        }
+    }
 }
 
 function update()
@@ -332,21 +348,24 @@ function update()
 
 
 
-    // touch contorls
-    var pointer = this.input.activePointer;
-    if (pointer.isDown) {
-        var touchX = pointer.x;
-        var touchY = pointer.y;
-        if (touchY > world.height / 2) {
-            // |       |       |
-            // | left  | right |
-            shouldMoveRight = touchX > world.width / 2;
-            shouldMoveLeft = !shouldMoveRight;
-        } else {
-            // | slash |  jump |
-            // |       |       |
-            shouldJump = touchX > world.width / 2  && !airborne;
-            shouldSlash = touchX <= world.width / 2;
+    if (game.players.length <= 1) {
+        // touch contorls
+        // disalbe for multiplayer
+        var pointer = this.input.activePointer;
+        if (pointer.isDown) {
+            var touchX = pointer.x;
+            var touchY = pointer.y;
+            if (touchY > world.height / 2) {
+                // |       |       |
+                // | left  | right |
+                shouldMoveRight = touchX > world.width / 2;
+                shouldMoveLeft = !shouldMoveRight;
+            } else {
+                // | slash |  jump |
+                // |       |       |
+                shouldJump = touchX > world.width / 2  && !airborne;
+                shouldSlash = touchX <= world.width / 2;
+            }
         }
     }
 
