@@ -10,7 +10,8 @@ var hostname = os.hostname();
 var port = process.env.PORT || 3001;
 
 var game = {
-    players: []
+    players: [],
+    sockets: {},
 };
 
 server.listen(port, () => {
@@ -28,9 +29,24 @@ app.use(function(req, res, next) {
    next();
 });
 
+function findPlayer(name) {
+    return game.players.find(x => x.name === name);
+}
+
 console.log("ROFL");
 io.on('connection', (socket) => {
 
+    socket.on('disconnect', function() {
+        console.log('dc', socket.id, game.players, game.sockets);
+        name = game.sockets[socket.id];
+        playerIndex = game.players.findIndex(x => x.name === name);
+        if (playerIndex >= 0) {
+            game.players.splice(playerIndex, 1);
+            delete game.sockets[socket.id];
+            socket.broadcast.emit('player_did_disconnect', name);
+            console.log('deleted', game.players, game.sockets);
+        }
+    });
     socket.on('on_player_connect', (player) => {
         // notify new player about other players
         socket.emit('did_connect', {
@@ -39,6 +55,7 @@ io.on('connection', (socket) => {
         game.players.push(player);
         // notify everybody about new player
         socket.broadcast.emit('player_did_connect', player);
+        game.sockets[socket.id] = player.name;
     });
     socket.on('kick_all', () => {
         game.players = [];
@@ -71,7 +88,7 @@ io.on('connection', (socket) => {
         socket.broadcast.emit('player_did_slash', player);
     });
     socket.on('on_sync_pos', (player) => {
-        aPlayer = game.players.find(x => x.name === player.name);
+        aPlayer = findPlayer(player.name);
         if (aPlayer) {
             aPlayer = player;
             socket.broadcast.emit('did_sync_pos', player);

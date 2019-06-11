@@ -1,7 +1,7 @@
 function connect_as(player) {
   if (window.location.hostname === 'localhost') {
       rhost = 'localhost';
-      rport = 3001;
+      rport = 5000;
   } else {
       rhost = 'yungskrylla.herokuapp.com';
       rport = 80;

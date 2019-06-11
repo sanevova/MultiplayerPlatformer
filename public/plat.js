@@ -143,6 +143,10 @@ function createPlayerFromPlayerData(playerData) {
     newPlayer.slash = function() {
         bindAttack(this, true, 'attack_slash');
     };
+    newPlayer.destroyPlayer = function() {
+        this.nameTag.destroy();
+        this.destroy();
+    };
     // diplay player name
     nameTag = scene.add.text(playerData.pos.x, playerData.pos.y, playerData.name, nameFont);
     newPlayer.nameTag = nameTag;
@@ -188,8 +192,12 @@ function configureSocketEvents() {
         newPlayerObj.anims.play('idle', true);
         game.players.push(newPlayerObj);
     });
+    socket.on('player_did_disconnect', (name) => {
+        console.log('disconnected!', name);
+        dcPlayerIndex = game.players.findIndex(x => x.name === name);
+        game.players.splice(dcPlayerIndex, 1)[0].destroyPlayer();
+    });
     socket.on('did_sync_pos', (playerData) => {
-        console.log('got pos sync!', playerData);
         aPlayer = findPlayer(playerData.name);
         aPlayer.setPosition(playerData.pos.x, playerData.pos.y);
     });
