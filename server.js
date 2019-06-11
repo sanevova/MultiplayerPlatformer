@@ -7,7 +7,7 @@ var io = require('socket.io')(server);
 var os = require("os");
 var hostname = os.hostname();
 
-var port = hostname === 'localhost' ? 3001 : 8303;
+var port = process.env.PORT || 3001;
 
 var game = {
     players: []
