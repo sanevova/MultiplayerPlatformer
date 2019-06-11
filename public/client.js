@@ -3,7 +3,7 @@ function connect_as(player) {
       rhost = 'localhost';
       rport = 3001;
   } else {
-      rhost = 'yungskrylla.herokuapp.com';// 'ec2-35-178-211-253.eu-west-2.compute.amazonaws.com';
+      rhost = 'yungskrylla.herokuapp.com';
       rport = 80;
   }
 
