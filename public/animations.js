@@ -42,4 +42,16 @@ function loadAnimations(scene) {
         duration: attackDuration,
         repeat: 0
     });
+    scene.anims.create({
+        key: 'attack_bow',
+        frames: scene.anims.generateFrameNumbers('adventurer-bow', { start: 0, end: 8 }),
+        duration: bowAttackDuration,
+        repeat: 0
+    });
+    scene.anims.create({
+        key: 'attack_bow_jump',
+        frames: scene.anims.generateFrameNumbers('adventurer-bow', { start: 9, end: 14 }),
+        duration: bowAttackDuration,
+        repeat: 0
+    });
 }

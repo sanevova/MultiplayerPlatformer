@@ -59,6 +59,7 @@ io.on('connection', (socket) => {
     });
     socket.on('kick_all', () => {
         game.players = [];
+        game.sockets = {};
     });
     socket.on('on_player_jump', (player) => {
         socket.broadcast.emit('player_did_jump', player);

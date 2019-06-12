@@ -5,14 +5,18 @@ world = {
     height: window.innerHeight
 };
 attackDuration = 500;
+bowAttackDuration = 1000;
 moveSpeedNormal = 360;
 jumpSpeedNormal = 560;
+healthBarMaxLength = 70;
+healthBarColor = 0x84FB21;
+
 tickNumber = 0;
 
 controlsString = 'MOVE=WASD ATTCK=QER CROUCH=C,S HIDE=Z';
 nameFont = {
     fontFamily: '"Roboto Condensed"',
-    fontSize: '32px',
+    fontSize: '26px',
     fontStyle: 'bold',
     fill: "#c51b7d"
 };
@@ -60,8 +64,10 @@ function preload ()
 
     platform_image = this.load.image('platform', 'assets/blocks/platform.png');
     this.load.spritesheet('adventurer', 'assets/adventurer/adventurer-sheet.png', { frameWidth: 50, frameHeight: 37 });
+    this.load.spritesheet('adventurer-bow', 'assets/adventurer/adventurer-bow-sheet.png', { frameWidth: 50, frameHeight: 37 });
 
-    this.load.image('sky', 'assets/blocks/space3.png');
+    // this.load.image('sky', 'assets/blocks/space3.png');
+    this.load.image('sky', 'assets/blocks/back-walls.png');
     this.load.image('logo', 'assets/blocks/phaser3-logo.png');
     this.load.image('red', 'assets/blocks/red.png');
     keyW = this.input.keyboard.addKey('W');
@@ -71,6 +77,7 @@ function preload ()
     keyQ = this.input.keyboard.addKey('Q');
     keyE = this.input.keyboard.addKey('E');
     keyR = this.input.keyboard.addKey('R');
+    keyF = this.input.keyboard.addKey('F');
     keyC = this.input.keyboard.addKey('C');
     keyK = this.input.keyboard.addKey('K');
     keyCtrl = this.input.keyboard.addKey('Control');
@@ -90,8 +97,10 @@ function playerData(player) {
 
 function createPlayerFromPlayerData(playerData) {
     // player creation
+    x = playerData.pos.x;
+    y = playerData.pos.y;
     console.log('creating from', playerData);
-    newPlayer = scene.physics.add.sprite(playerData.pos.x, playerData.pos.y, 'adventurer').setSize(25, 34).setScale(2);
+    newPlayer = scene.physics.add.sprite(x, y, 'adventurer').setSize(25, 34).setScale(2);
     newPlayer.setCollideWorldBounds(true);
     newPlayer.isAttacking = false;
     newPlayer.name = playerData.name;
@@ -145,11 +154,12 @@ function createPlayerFromPlayerData(playerData) {
     };
     newPlayer.destroyPlayer = function() {
         this.nameTag.destroy();
+        this.healthBar.destroy();
         this.destroy();
     };
     // diplay player name
-    nameTag = scene.add.text(playerData.pos.x, playerData.pos.y, playerData.name, nameFont);
-    newPlayer.nameTag = nameTag;
+    newPlayer.nameTag = scene.add.text(x, y, newPlayer.name, nameFont);
+    newPlayer.healthBar = scene.add.graphics();
     return newPlayer;
 }
 
@@ -257,9 +267,9 @@ function configureSocketEvents() {
 
 function create() {
     console.log('create');
-
     // map creation
-    this.add.image(400, 300, 'sky');
+    bg = this.add.image(world.width / 2, world.height / 2, 'sky');
+    bg.setScale(Math.min(world.width / bg.width, world.height / bg.height));
 
     this.game.platforms = this.physics.add.staticGroup();
 
@@ -293,15 +303,24 @@ function create() {
 function bindAttack(aPlayer, condition, animationName) {
     if (condition && !aPlayer.isAttacking) {
         aPlayer.isAttacking = true;
-        setTimeout(() => {aPlayer.isAttacking = false;}, attackDuration);
+        duration = animationName.startsWith('attack_bow') ? bowAttackDuration : attackDuration;
+        setTimeout(() => {aPlayer.isAttacking = false;}, duration);
         aPlayer.anims.play(animationName, false);
     }
 }
 
 function updatePlayer(aPlayer) {
-    // console.log('updating', aPlayer.name);
-    aPlayer.nameTag.setX(aPlayer.x - aPlayer.body.width / 2);
-    aPlayer.nameTag.setY(aPlayer.y - aPlayer.body.height);
+    yOffset = 5;
+    aPlayer.nameTag.setX(aPlayer.x - aPlayer.nameTag.width / 2);
+    aPlayer.nameTag.setY(aPlayer.y - aPlayer.displayHeight - 2 * yOffset);
+    aPlayer.healthBar.clear();
+    aPlayer.healthBar.fillStyle(healthBarColor);
+    aPlayer.healthBar.fillRoundedRect(
+        aPlayer.x - healthBarMaxLength / 2,
+        aPlayer.y - aPlayer.displayHeight + aPlayer.nameTag.height - yOffset,
+        healthBarMaxLength,
+        10,
+        2);
 
     // state
     aPlayer.airborne = !aPlayer.body.touching.down;
@@ -357,10 +376,6 @@ function update()
     if (shouldSlash && !player.didSlash) {
         socket.emit('on_player_slash', {name: player.name});
     }
-
-
-
-
 
     if (game.players.length <= 1) {
         // touch contorls
@@ -431,6 +446,7 @@ function update()
     bindAttack(player, shouldSlash, 'attack_slash');
     bindAttack(player, keyE.isDown, 'attack_overhead');
     bindAttack(player, keyR.isDown, 'attack_uppercut');
+    bindAttack(player, keyF.isDown, 'attack_bow' + (player.airborne ? '_jump' : ''));
 
     tickNumber += 1;
     // ~ 8sec per 1k ticks
@@ -449,12 +465,17 @@ function update()
     player.didMoveRight = shouldMoveRight;
     player.didJump = shouldJump;
     player.didSlash = shouldSlash;
+    updateLabels();
 }
 
 function updateLabels() {
     hiScoreText.setText(`hi score: ${hiScore.name} => ${hiScore.count}`);
     warning = player.shouldTrackStats ? '' : ' (UNTRACKERD: add ?name=<name> to url)';
     jumpScoreText.setText(`jump score: ${player.jumpScore}${warning}`);
+    if (game.players.length > 1) {
+        hiScoreText.setText(game.players[0].healthBar.x + ' ' + game.players[0].healthBar.y);
+        jumpScoreText.setText(game.players[1].healthBar.x + ' ' + game.players[1].healthBar.y);
+    }
     labels.forEach(function(text) {
       text.setVisible(player.shouldShowText);
     });
