@@ -8,7 +8,9 @@ attackDuration = 500;
 bowAttackDuration = 1000;
 moveSpeedNormal = 360;
 jumpSpeedNormal = 560;
-healthBarMaxLength = 70;
+healthBarMaxWidth = 70;
+healthBarHeight = 10;
+healthBarOutline = 2;
 healthBarColor = 0x84FB21;
 
 tickNumber = 0;
@@ -314,12 +316,18 @@ function updatePlayer(aPlayer) {
     aPlayer.nameTag.setX(aPlayer.x - aPlayer.nameTag.width / 2);
     aPlayer.nameTag.setY(aPlayer.y - aPlayer.displayHeight - 2 * yOffset);
     aPlayer.healthBar.clear();
+    aPlayer.healthBar.fillStyle(0x000000);
+    aPlayer.healthBar.fillRect(
+        aPlayer.x - healthBarMaxWidth / 2 - healthBarOutline,
+        aPlayer.y - aPlayer.displayHeight + aPlayer.nameTag.height - yOffset - healthBarOutline,
+        healthBarMaxWidth + 2 * healthBarOutline,
+        healthBarHeight + 2 * healthBarOutline);
     aPlayer.healthBar.fillStyle(healthBarColor);
     aPlayer.healthBar.fillRoundedRect(
-        aPlayer.x - healthBarMaxLength / 2,
+        aPlayer.x - healthBarMaxWidth / 2,
         aPlayer.y - aPlayer.displayHeight + aPlayer.nameTag.height - yOffset,
-        healthBarMaxLength,
-        10,
+        healthBarMaxWidth,
+        healthBarHeight,
         2);
 
     // state
