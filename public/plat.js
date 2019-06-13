@@ -223,11 +223,47 @@ function create() {
     createExtra();
 }
 
+function checkHit(attacker) {
+    // check hit
+    isLookingLeft = attacker.flipX;
+    for (i = 0; i < game.players.length; ++i) {
+        target = game.players[i];
+        if (target === attacker) {
+            continue;
+        }
+        xHitDistanceThreshold = target.displayWidth * 2 / 3;
+        yHitDistanceThreshold = target.displayWidth / 2;
+        isTargetToLeft = target.x - attacker.x < 0;
+        didHit =
+            Math.abs(target.x - attacker.x) < xHitDistanceThreshold
+            && Math.abs(target.y - attacker.y) < yHitDistanceThreshold
+            && (
+                (isLookingLeft && isTargetToLeft)
+                || (!isLookingLeft && !isTargetToLeft)
+            );
+        if (didHit) {
+            console.log(`${player.name} hit ${target.name}!`)
+            if (isBowAttack) {
+                break;
+            }
+        }
+    }
+}
+
 function bindAttack(aPlayer, condition, animationName) {
     if (condition && !aPlayer.isAttacking) {
         aPlayer.isAttacking = true;
-        duration = animationName.startsWith('attack_bow') ? bowAttackDuration : attackDuration;
-        setTimeout(() => {aPlayer.isAttacking = false;}, duration);
+        isBowAttack = animationName.startsWith('attack_bow');
+        duration = isBowAttack ? bowAttackDuration : attackDuration;
+        // check if hit target after attack finished
+        setTimeout(function(attacker) {
+            return function () {
+                // stop attack state after attack finished
+                aPlayer.isAttacking = false;
+                // check if hit any target after attack finished
+                checkHit(attacker);
+            };
+        } (aPlayer), duration / 2);
         aPlayer.anims.play(animationName, false);
     }
 }
