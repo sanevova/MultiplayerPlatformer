@@ -179,7 +179,7 @@ function createMyPlayer() {
     });
     myname = player.name;
     game.players.push(player);
-    socket = connect_as(playerData(player));
+    socket = connectAs(playerData(player));
     return player;
 }
 
@@ -187,84 +187,6 @@ function findPlayer(name) {
     return game.players.find(
         (aPlayer) => aPlayer.name === name
     );
-}
-
-function configureSocketEvents() {
-    socket.on('did_connect', (gameState) => {
-        console.log('connected! other players:', gameState);
-        // add game objects for other players
-        game.players = game.players.concat(gameState.otherPlayers.map(
-            (otherPlayer) => createPlayerFromPlayerData(otherPlayer)
-        ));
-    });
-    socket.on('player_did_connect', (newPlayer) => {
-        console.log('new player connected!', newPlayer);
-        // add game object for new player
-        newPlayerObj = createPlayerFromPlayerData(newPlayer);
-        newPlayerObj.anims.play('idle', true);
-        game.players.push(newPlayerObj);
-    });
-    socket.on('player_did_disconnect', (name) => {
-        console.log('disconnected!', name);
-        dcPlayerIndex = game.players.findIndex(x => x.name === name);
-        game.players.splice(dcPlayerIndex, 1)[0].destroyPlayer();
-    });
-    socket.on('did_sync_pos', (playerData) => {
-        aPlayer = findPlayer(playerData.name);
-        aPlayer.setPosition(playerData.pos.x, playerData.pos.y);
-    });
-
-    socket.on('player_did_jump', (jumpingPlayerData) => {
-        // add game object for new player
-        jumpingPlayer = findPlayer(jumpingPlayerData.name);
-        if (jumpingPlayer) {
-            jumpingPlayer.jump();
-        }
-    });
-    socket.on('player_did_crouch', (aPlayer) => {
-        match = findPlayer(aPlayer.name);
-        if (match) {
-            match.crouch();
-        }
-    });
-    socket.on('player_did_stop_crouch', (aPlayer) => {
-        match = findPlayer(aPlayer.name);
-        if (match) {
-            match.stopCrouch();
-        }
-    });
-    socket.on('player_did_moveLeft', (aPlayer) => {
-        match = findPlayer(aPlayer.name);
-        if (match) {
-            match.moveLeft();
-        }
-    });
-    socket.on('player_did_stop_moveLeft', (aPlayer) => {
-        match = findPlayer(aPlayer.name);
-        if (match) {
-            match.stopMove();
-        }
-    });
-    socket.on('player_did_moveRight', (aPlayer) => {
-        match = findPlayer(aPlayer.name);
-        if (match) {
-            match.moveRight();
-        }
-    });
-    socket.on('player_did_stop_moveRight', (aPlayer) => {
-        match = findPlayer(aPlayer.name);
-        if (match) {
-            match.stopMove();
-        }
-    });
-
-    socket.on('player_did_slash', (aPlayer) => {
-        match = findPlayer(aPlayer.name);
-        if (match) {
-            match.slash();
-        }
-    });
-
 }
 
 function create() {
@@ -291,8 +213,7 @@ function create() {
     this.game.platforms.create(750, 220, 'platform');
 
     player = createMyPlayer();
-    configureSocketEvents();
-    // this.physics.add.collider(player, this.game.platforms);
+    configureSocketEvents(socket);
 
     // animations
     loadAnimations(this);
@@ -366,6 +287,26 @@ function update()
     shouldJump = (cursors.up.isDown || keyW.isDown || cursors.space.isDown) && !airborne;
     shouldSlash = keyQ.isDown;
 
+
+    // touch contorls
+    var pointer = this.input.activePointer;
+    if (pointer.isDown) {
+        var touchX = pointer.x;
+        var touchY = pointer.y;
+        if (touchY > world.height / 2) {
+            // |       |       |
+            // | left  | right |
+            shouldMoveRight = touchX > world.width / 2;
+            shouldMoveLeft = !shouldMoveRight;
+        } else {
+            // | slash |  jump |
+            // |       |       |
+            shouldJump = touchX > world.width / 2  && !airborne;
+            shouldSlash = touchX <= world.width / 2;
+        }
+    }
+
+
     if (shouldCrouch && !player.didCrouch) {
         socket.emit('on_player_crouch', {name: player.name});
     } else if (!shouldCrouch && player.didCrouch) {
@@ -383,27 +324,6 @@ function update()
     }
     if (shouldSlash && !player.didSlash) {
         socket.emit('on_player_slash', {name: player.name});
-    }
-
-    if (game.players.length <= 1) {
-        // touch contorls
-        // disalbe for multiplayer
-        var pointer = this.input.activePointer;
-        if (pointer.isDown) {
-            var touchX = pointer.x;
-            var touchY = pointer.y;
-            if (touchY > world.height / 2) {
-                // |       |       |
-                // | left  | right |
-                shouldMoveRight = touchX > world.width / 2;
-                shouldMoveLeft = !shouldMoveRight;
-            } else {
-                // | slash |  jump |
-                // |       |       |
-                shouldJump = touchX > world.width / 2  && !airborne;
-                shouldSlash = touchX <= world.width / 2;
-            }
-        }
     }
 
     if (shouldMoveLeft) {
