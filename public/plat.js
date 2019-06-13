@@ -234,55 +234,13 @@ function bindAttack(aPlayer, condition, attackType) {
     }
 }
 
-function updatePlayer(aPlayer) {
-    yOffset = 5;
-
-    // draw name tag
-    aPlayer.nameTag.setX(aPlayer.x - aPlayer.nameTag.width / 2);
-    aPlayer.nameTag.setY(aPlayer.y - aPlayer.displayHeight - 2 * yOffset);
-    aPlayer.nameTag.setText(`${aPlayer.name} (${aPlayer.health})`);
-
-    healthBarWidth = aPlayer.health / 100 * healthBarMaxWidth;
-    // draw health bar
-    aPlayer.healthBar.clear();
-    aPlayer.healthBar.fillStyle(0x000000);
-    //outer rect for outline
-    aPlayer.healthBar.fillRect(
-        aPlayer.x - healthBarMaxWidth / 2 - healthBarOutline,
-        aPlayer.y - aPlayer.displayHeight + aPlayer.nameTag.height - yOffset - healthBarOutline,
-        healthBarMaxWidth + 2 * healthBarOutline,
-        healthBarHeight + 2 * healthBarOutline);
-    // actual health
-    aPlayer.healthBar.fillStyle(healthBarColor);
-    aPlayer.healthBar.fillRoundedRect(
-        aPlayer.x - healthBarMaxWidth / 2,
-        aPlayer.y - aPlayer.displayHeight + aPlayer.nameTag.height - yOffset,
-        healthBarWidth, // based on current hp
-        healthBarHeight,
-        2);
-
-    // state
-    aPlayer.airborne = !aPlayer.body.touching.down;
-    aPlayer.moveSpeed = aPlayer.isCrouching ? moveSpeedNormal / 3 : moveSpeedNormal;
-    aPlayer.shouldAnimateMovement = !aPlayer.airborne && !aPlayer.isAttacking;
-    if (!aPlayer.isAttacking) {
-        // if (aPlayer.airborne) {
-        //     aPlayer.anims.play('jump', true);
-        // } else if (aPlayer.isCrouching) {
-        //     aPlayer.anims.play('crouch', true);
-        // } else {
-        //     aPlayer.anims.play('idle', true);
-        // }
-    }
-}
-
 function update()
 {
     if (keyK.isDown) {
         socket.emit('kick_all');
     }
 
-    game.players.map(updatePlayer);
+    game.players.map(p => p.update());
 
     // state
     airborne = !player.body.touching.down;

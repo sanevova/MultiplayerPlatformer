@@ -17,6 +17,54 @@ class Player extends Phaser.Physics.Arcade.Sprite {
         return this;
     }
 
+    update() {
+        this._drawChildren();
+
+        // state
+        this.airborne = !this.body.touching.down;
+        this.moveSpeed = this.isCrouching ? moveSpeedNormal / 3 : moveSpeedNormal;
+        this.shouldAnimateMovement = !this.airborne && !this.isAttacking;
+        if (!this.isAttacking) {
+            // fix animations? here ?????????
+            // if (aPlayer.airborne) {
+            //     aPlayer.anims.play('jump', true);
+            // } else if (aPlayer.isCrouching) {
+            //     aPlayer.anims.play('crouch', true);
+            // } else {
+            //     aPlayer.anims.play('idle', true);
+            // }
+        }
+    }
+
+    _drawChildren() {
+        var yOffset = 5;
+        var healthBarWidth = this.health / 100 * healthBarMaxWidth;
+
+        // draw name tag
+        this.nameTag.setX(this.x - this.nameTag.width / 2);
+        this.nameTag.setY(this.y - this.displayHeight - 2 * yOffset);
+        this.nameTag.setText(`${this.name} (${this.health})`);
+
+        // draw health bar
+        this.healthBar.clear();
+        this.healthBar.fillStyle(0x000000);
+        //outer rect for outline
+        this.healthBar.fillRect(
+            this.x - healthBarMaxWidth / 2 - healthBarOutline,
+            this.y - this.displayHeight + this.nameTag.height - yOffset - healthBarOutline,
+            healthBarMaxWidth + 2 * healthBarOutline,
+            healthBarHeight + 2 * healthBarOutline);
+        // actual health
+        this.healthBar.fillStyle(healthBarColor);
+        this.healthBar.fillRoundedRect(
+            this.x - healthBarMaxWidth / 2,
+            this.y - this.displayHeight + this.nameTag.height - yOffset,
+            healthBarWidth, // based on current hp
+            healthBarHeight,
+            2);
+
+    }
+
     jump() {
         // < 0 but accounting for float error
         if (this.body.velocity.y < -5) {
