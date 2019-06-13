@@ -85,9 +85,14 @@ io.on('connection', (socket) => {
     // socket.on('player_Jump', (player) => {
     //     socket.broadcast.emit('player_did_Jump', player);
     // });
-    socket.on('on_player_slash', (player) => {
-        socket.broadcast.emit('player_did_slash', player);
+    socket.on('on_player_attack', (player, attackType) => {
+        socket.broadcast.emit('player_did_attack', player, attackType);
     });
+    socket.on('on_player_hit', (hitData) => {
+        socket.emit('player_did_hit', hitData);
+        socket.broadcast.emit('player_did_hit', hitData);
+    });
+
     socket.on('on_sync_pos', (player) => {
         aPlayer = findPlayer(player.name);
         if (aPlayer) {

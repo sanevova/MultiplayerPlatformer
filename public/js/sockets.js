@@ -67,10 +67,18 @@ function configureSocketEvents(socket) {
         }
     });
 
-    socket.on('player_did_slash', (aPlayer) => {
+    socket.on('player_did_attack', (aPlayer, attackType) => {
         match = findPlayer(aPlayer.name);
         if (match) {
-            match.slash();
+            match.attack(attackType);
+        }
+    });
+    socket.on('player_did_hit', (hitData) => {
+        attacker = findPlayer(hitData.attacker.name);
+        target = findPlayer(hitData.target.name);
+        attackType = hitData.attackType;
+        if (attacker && target) {
+            attacker.hit(target, attackType);
         }
     });
 };

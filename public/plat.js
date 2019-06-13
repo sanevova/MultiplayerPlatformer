@@ -13,6 +13,14 @@ healthBarHeight = 10;
 healthBarOutline = 2;
 healthBarColor = 0x84FB21;
 
+attackDamageByType = {
+    attack_slash: 10,
+    attack_overhead: 10,
+    attack_uppercut: 10,
+    attack_bow: 20,
+    attack_bow_jump: 30
+};
+
 tickNumber = 0;
 
 controlsString = 'MOVE=WASD ATTCK=QER CROUCH=C,S HIDE=Z';
@@ -106,6 +114,7 @@ function createPlayerFromPlayerData(playerData) {
     newPlayer.setCollideWorldBounds(true);
     newPlayer.isAttacking = false;
     newPlayer.name = playerData.name;
+    newPlayer.health = 100;
     newPlayer.shouldTrackStats = false; //newPlayer.name.length > 0;
     newPlayer.shouldShowText = false;
     newPlayer.jumpScore = 0;
@@ -151,13 +160,16 @@ function createPlayerFromPlayerData(playerData) {
         this.setVelocityX(0);
         this.anims.play('idle', true);
     };
-    newPlayer.slash = function() {
-        bindAttack(this, true, 'attack_slash');
+    newPlayer.attack = function(attackType) {
+        bindAttack(this, true, attackType);
     };
     newPlayer.destroyPlayer = function() {
         this.nameTag.destroy();
         this.healthBar.destroy();
         this.destroy();
+    };
+    newPlayer.hit = function(target, attackType) {
+        target.health = Math.max(0, target.health - attackDamageByType[attackType]);
     };
     // diplay player name
     newPlayer.nameTag = scene.add.text(x, y, newPlayer.name, nameFont);
@@ -223,16 +235,17 @@ function create() {
     createExtra();
 }
 
-function checkHit(attacker) {
+function checkHit(attacker, attackType) {
     // check hit
+    isBowAttack = attackType.startsWith('attack_bow');
     isLookingLeft = attacker.flipX;
     for (i = 0; i < game.players.length; ++i) {
         target = game.players[i];
         if (target === attacker) {
             continue;
         }
-        xHitDistanceThreshold = target.displayWidth * 2 / 3;
-        yHitDistanceThreshold = target.displayWidth / 2;
+        xHitDistanceThreshold = target.displayWidth;
+        yHitDistanceThreshold = target.displayHeight / 2;
         isTargetToLeft = target.x - attacker.x < 0;
         didHit =
             Math.abs(target.x - attacker.x) < xHitDistanceThreshold
@@ -242,49 +255,72 @@ function checkHit(attacker) {
                 || (!isLookingLeft && !isTargetToLeft)
             );
         if (didHit) {
-            console.log(`${player.name} hit ${target.name}!`)
+            console.log(`${attacker.name} hit ${target.name}!`)
+            socket.emit('on_player_hit', {
+                attacker: {
+                    name: attacker.name
+                },
+                target: {
+                    name: target.name
+                },
+                attackType: attackType
+            });
+            // will do damage on callback after confirmation from server
             if (isBowAttack) {
+                // bow does not splash
                 break;
             }
         }
     }
 }
 
-function bindAttack(aPlayer, condition, animationName) {
+function bindAttack(aPlayer, condition, attackType) {
     if (condition && !aPlayer.isAttacking) {
         aPlayer.isAttacking = true;
-        isBowAttack = animationName.startsWith('attack_bow');
+        isBowAttack = attackType.startsWith('attack_bow');
         duration = isBowAttack ? bowAttackDuration : attackDuration;
         // stop attack state after attack finished
         (function(attacker) {
             setTimeout(() => {attacker.isAttacking = false;}, duration);
-        })(aPlayer),
+        })(aPlayer);
 
-        // check if hit any target in the middle of the attack
-        // for better responsiveness
-        (function(attacker) {
-            setTimeout(() => checkHit(attacker), duration);
-        })(aPlayer),
-        aPlayer.anims.play(animationName, false);
+        // only check for hit by this player on this client
+        // to avoid sending the same hit signal from multiple clients
+        if (aPlayer === player) {
+            // check if hit any target in the middle of the attack
+            // for better responsiveness
+            (function(attacker, attackType) {
+                setTimeout(() => checkHit(attacker, attackType), duration / 2);
+            })(aPlayer, attackType);
+        }
+        aPlayer.anims.play(attackType, false);
     }
 }
 
 function updatePlayer(aPlayer) {
     yOffset = 5;
+
+    // draw name tag
     aPlayer.nameTag.setX(aPlayer.x - aPlayer.nameTag.width / 2);
     aPlayer.nameTag.setY(aPlayer.y - aPlayer.displayHeight - 2 * yOffset);
+    aPlayer.nameTag.setText(`${aPlayer.name} (${aPlayer.health})`);
+
+    healthBarWidth = aPlayer.health / 100 * healthBarMaxWidth;
+    // draw health bar
     aPlayer.healthBar.clear();
     aPlayer.healthBar.fillStyle(0x000000);
+    //outer rect for outline
     aPlayer.healthBar.fillRect(
         aPlayer.x - healthBarMaxWidth / 2 - healthBarOutline,
         aPlayer.y - aPlayer.displayHeight + aPlayer.nameTag.height - yOffset - healthBarOutline,
         healthBarMaxWidth + 2 * healthBarOutline,
         healthBarHeight + 2 * healthBarOutline);
+    // actual health
     aPlayer.healthBar.fillStyle(healthBarColor);
     aPlayer.healthBar.fillRoundedRect(
         aPlayer.x - healthBarMaxWidth / 2,
         aPlayer.y - aPlayer.displayHeight + aPlayer.nameTag.height - yOffset,
-        healthBarMaxWidth,
+        healthBarWidth, // based on current hp
         healthBarHeight,
         2);
 
@@ -323,6 +359,9 @@ function update()
     shouldMoveRight = cursors.right.isDown || keyD.isDown;
     shouldJump = (cursors.up.isDown || keyW.isDown || cursors.space.isDown) && !airborne;
     shouldSlash = keyQ.isDown;
+    shouldOverhead = keyE.isDown;
+    shouldUppercut = keyR.isDown;
+    shouldBow = keyF.isDown;
 
 
     // touch contorls
@@ -359,8 +398,17 @@ function update()
     } else if (!shouldMoveRight && player.didMoveRight) {
         socket.emit('on_player_stop_moveRight', {name: player.name});
     }
-    if (shouldSlash && !player.didSlash) {
-        socket.emit('on_player_slash', {name: player.name});
+    if (shouldSlash && !player.didSlash && !player.isAttacking) {
+        socket.emit('on_player_attack', {name: player.name}, 'attack_slash');
+    }
+    if (shouldOverhead && !player.didOverhead && !player.isAttacking) {
+        socket.emit('on_player_attack', {name: player.name}, 'attack_overhead');
+    }
+    if (shouldUppercut && !player.didUppercut && !player.isAttacking) {
+        socket.emit('on_player_attack', {name: player.name}, 'attack_uppercut');
+    }
+    if (shouldBow && !player.didBow && !player.isAttacking) {
+        socket.emit('on_player_attack', {name: player.name}, 'attack_bow');
     }
 
     if (shouldMoveLeft) {
@@ -409,9 +457,9 @@ function update()
     }
 
     bindAttack(player, shouldSlash, 'attack_slash');
-    bindAttack(player, keyE.isDown, 'attack_overhead');
-    bindAttack(player, keyR.isDown, 'attack_uppercut');
-    bindAttack(player, keyF.isDown, 'attack_bow' + (player.airborne ? '_jump' : ''));
+    bindAttack(player, shouldOverhead, 'attack_overhead');
+    bindAttack(player, shouldUppercut, 'attack_uppercut');
+    bindAttack(player, shouldBow, 'attack_bow' + (player.airborne ? '_jump' : ''));
 
     tickNumber += 1;
     // ~ 8sec per 1k ticks
@@ -429,7 +477,10 @@ function update()
     player.didMoveLeft = shouldMoveLeft;
     player.didMoveRight = shouldMoveRight;
     player.didJump = shouldJump;
-    player.didSlash = shouldSlash;
+    player.shouldSlash = shouldSlash;
+    player.shouldOverhead = shouldOverhead;
+    player.shouldUppercut = shouldUppercut;
+    player.shouldBow = shouldBow;
     updateLabels();
 }
 
