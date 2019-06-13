@@ -24,7 +24,7 @@ attackDamageByType = {
 tickNumber = 0;
 
 controlsString = 'MOVE=WASD ATTCK=QER CROUCH=C,S HIDE=Z';
-nameFont = {
+kNameFont = {
     fontFamily: '"Roboto Condensed"',
     fontSize: '26px',
     fontStyle: 'bold',
@@ -72,11 +72,10 @@ function preload ()
 {
     console.log('preload');
 
-    platform_image = this.load.image('platform', 'assets/blocks/platform.png');
+    this.load.image('platform', 'assets/blocks/platform.png');
     this.load.spritesheet('adventurer', 'assets/adventurer/adventurer-sheet.png', { frameWidth: 50, frameHeight: 37 });
     this.load.spritesheet('adventurer-bow', 'assets/adventurer/adventurer-bow-sheet.png', { frameWidth: 50, frameHeight: 37 });
 
-    // this.load.image('sky', 'assets/blocks/space3.png');
     this.load.image('sky', 'assets/blocks/back-walls.png');
     this.load.image('logo', 'assets/blocks/phaser3-logo.png');
     this.load.image('red', 'assets/blocks/red.png');
@@ -102,78 +101,16 @@ function playerData(player) {
             x: player.x,
             y: player.y
         }
+        // health?
     };
 }
 
 function createPlayerFromPlayerData(playerData) {
     // player creation
-    x = playerData.pos.x;
-    y = playerData.pos.y;
     console.log('creating from', playerData);
-    newPlayer = scene.physics.add.sprite(x, y, 'adventurer').setSize(25, 34).setScale(2);
-    newPlayer.setCollideWorldBounds(true);
-    newPlayer.isAttacking = false;
-    newPlayer.name = playerData.name;
-    newPlayer.health = 100;
-    newPlayer.shouldTrackStats = false; //newPlayer.name.length > 0;
-    newPlayer.shouldShowText = false;
-    newPlayer.jumpScore = 0;
-
+    newPlayer = new Player(scene, playerData.pos.x, playerData.pos.y, playerData.name);
     // collide with platforms
     scene.physics.add.collider(newPlayer, scene.game.platforms);
-
-    newPlayer.jump = function() {
-        // < 0 but accounting for float error
-        if (this.body.velocity.y < -5) {
-            // already jumping
-            return;
-        }
-        this.setVelocityY(-jumpSpeedNormal);
-    };
-    newPlayer.crouch = function() {
-        this.isCrouching = true;
-        this.anims.play('crouch', true);
-    };
-    newPlayer.stopCrouch = function() {
-        this.isCrouching = false;
-    };
-    newPlayer.moveLeft = function() {
-        airborne = !this.body.touching.down;
-        shouldAnimateMovement = !airborne && !this.isAttacking;
-        this.setVelocityX(-this.moveSpeed);
-
-        this.flipX = 1;
-        if (shouldAnimateMovement) {
-            this.anims.play('run', true);
-        }
-    };
-    newPlayer.moveRight = function() {
-        airborne = !this.body.touching.down;
-        shouldAnimateMovement = !airborne && !this.isAttacking;
-        this.setVelocityX(this.moveSpeed);
-        this.flipX = 0;
-        if (shouldAnimateMovement) {
-            this.anims.play('run', true);
-        }
-    };
-    newPlayer.stopMove = function() {
-        this.setVelocityX(0);
-        this.anims.play('idle', true);
-    };
-    newPlayer.attack = function(attackType) {
-        bindAttack(this, true, attackType);
-    };
-    newPlayer.destroyPlayer = function() {
-        this.nameTag.destroy();
-        this.healthBar.destroy();
-        this.destroy();
-    };
-    newPlayer.hit = function(target, attackType) {
-        target.health = Math.max(0, target.health - attackDamageByType[attackType]);
-    };
-    // diplay player name
-    newPlayer.nameTag = scene.add.text(x, y, newPlayer.name, nameFont);
-    newPlayer.healthBar = scene.add.graphics();
     return newPlayer;
 }
 
