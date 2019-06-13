@@ -255,15 +255,16 @@ function bindAttack(aPlayer, condition, animationName) {
         aPlayer.isAttacking = true;
         isBowAttack = animationName.startsWith('attack_bow');
         duration = isBowAttack ? bowAttackDuration : attackDuration;
-        // check if hit target after attack finished
-        setTimeout(function(attacker) {
-            return function () {
-                // stop attack state after attack finished
-                aPlayer.isAttacking = false;
-                // check if hit any target after attack finished
-                checkHit(attacker);
-            };
-        } (aPlayer), duration / 2);
+        // stop attack state after attack finished
+        (function(attacker) {
+            setTimeout(() => {attacker.isAttacking = false;}, duration);
+        })(aPlayer),
+
+        // check if hit any target in the middle of the attack
+        // for better responsiveness
+        (function(attacker) {
+            setTimeout(() => checkHit(attacker), duration);
+        })(aPlayer),
         aPlayer.anims.play(animationName, false);
     }
 }
