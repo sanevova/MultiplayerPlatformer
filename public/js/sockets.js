@@ -23,54 +23,62 @@ function configureSocketEvents(socket) {
         aPlayer.setPosition(playerData.pos.x, playerData.pos.y);
     });
 
-    socket.on('player_did_jump', (jumpingPlayerData) => {
+    socket.on('player_did_jump', (playerData) => {
         // add game object for new player
-        jumpingPlayer = findPlayer(jumpingPlayerData.name);
+        jumpingPlayer = findPlayer(playerData.name);
         if (jumpingPlayer) {
             jumpingPlayer.jump();
+            jumpingPlayer.setPosition(playerData.pos.x, playerData.pos.y);
         }
     });
-    socket.on('player_did_crouch', (aPlayer) => {
-        match = findPlayer(aPlayer.name);
+    socket.on('player_did_crouch', (playerData) => {
+        match = findPlayer(playerData.name);
         if (match) {
             match.crouch();
+            match.setPosition(playerData.pos.x, playerData.pos.y);
         }
     });
-    socket.on('player_did_stop_crouch', (aPlayer) => {
-        match = findPlayer(aPlayer.name);
+    socket.on('player_did_stop_crouch', (playerData) => {
+        match = findPlayer(playerData.name);
         if (match) {
             match.stopCrouch();
+            match.setPosition(playerData.pos.x, playerData.pos.y);
         }
     });
-    socket.on('player_did_moveLeft', (aPlayer) => {
-        match = findPlayer(aPlayer.name);
+    socket.on('player_did_moveLeft', (playerData) => {
+        match = findPlayer(playerData.name);
         if (match) {
             match.moveLeft();
+            match.setPosition(playerData.pos.x, playerData.pos.y);
         }
     });
-    socket.on('player_did_stop_moveLeft', (aPlayer) => {
-        match = findPlayer(aPlayer.name);
+    socket.on('player_did_stop_moveLeft', (playerData) => {
+        match = findPlayer(playerData.name);
         if (match) {
             match.stopMove();
+            match.setPosition(playerData.pos.x, playerData.pos.y);
         }
     });
-    socket.on('player_did_moveRight', (aPlayer) => {
-        match = findPlayer(aPlayer.name);
+    socket.on('player_did_moveRight', (playerData) => {
+        match = findPlayer(playerData.name);
         if (match) {
             match.moveRight();
+            match.setPosition(playerData.pos.x, playerData.pos.y);
         }
     });
-    socket.on('player_did_stop_moveRight', (aPlayer) => {
-        match = findPlayer(aPlayer.name);
+    socket.on('player_did_stop_moveRight', (playerData) => {
+        match = findPlayer(playerData.name);
         if (match) {
             match.stopMove();
+            match.setPosition(playerData.pos.x, playerData.pos.y);
         }
     });
 
-    socket.on('player_did_attack', (aPlayer, attackType) => {
-        match = findPlayer(aPlayer.name);
+    socket.on('player_did_attack', (playerData, attackType) => {
+        match = findPlayer(playerData.name);
         if (match) {
             match.attack(attackType);
+            match.setPosition(playerData.pos.x, playerData.pos.y);
         }
     });
     socket.on('player_did_hit', (hitData) => {

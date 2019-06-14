@@ -126,7 +126,6 @@ function createMyPlayer() {
             y: 450
         }
     });
-    myname = player.name;
     game.players.push(player);
     socket = connectAs(playerData(player));
     return player;
@@ -279,31 +278,31 @@ function update()
 
 
     if (shouldCrouch && !player.didCrouch) {
-        socket.emit('on_player_crouch', {name: player.name});
+        socket.emit('on_player_crouch', playerData(player));
     } else if (!shouldCrouch && player.didCrouch) {
-        socket.emit('on_player_stop_crouch', {name: player.name});
+        socket.emit('on_player_stop_crouch', playerData(player));
     }
     if (shouldMoveLeft && !player.didMoveLeft) {
-        socket.emit('on_player_moveLeft', {name: player.name});
+        socket.emit('on_player_moveLeft', playerData(player));
     } else if (!shouldMoveLeft && player.didMoveLeft) {
-        socket.emit('on_player_stop_moveLeft', {name: player.name});
+        socket.emit('on_player_stop_moveLeft', playerData(player));
     }
     if (shouldMoveRight && !player.didMoveRight) {
-        socket.emit('on_player_moveRight', {name: player.name});
+        socket.emit('on_player_moveRight', playerData(player));
     } else if (!shouldMoveRight && player.didMoveRight) {
-        socket.emit('on_player_stop_moveRight', {name: player.name});
+        socket.emit('on_player_stop_moveRight', playerData(player));
     }
     if (shouldSlash && !player.didSlash && !player.isAttacking) {
-        socket.emit('on_player_attack', {name: player.name}, 'attack_slash');
+        socket.emit('on_player_attack', playerData(player), 'attack_slash');
     }
     if (shouldOverhead && !player.didOverhead && !player.isAttacking) {
-        socket.emit('on_player_attack', {name: player.name}, 'attack_overhead');
+        socket.emit('on_player_attack', playerData(player), 'attack_overhead');
     }
     if (shouldUppercut && !player.didUppercut && !player.isAttacking) {
-        socket.emit('on_player_attack', {name: player.name}, 'attack_uppercut');
+        socket.emit('on_player_attack', playerData(player), 'attack_uppercut');
     }
     if (shouldBow && !player.didBow && !player.isAttacking) {
-        socket.emit('on_player_attack', {name: player.name}, 'attack_bow');
+        socket.emit('on_player_attack', playerData(player), 'attack_bow');
     }
 
     if (shouldMoveLeft) {
@@ -330,13 +329,8 @@ function update()
 
     // jump
     if (shouldJump) {
-        // jumpStats();
         player.jump();
-        if (player.name === myname) {
-            socket.emit('on_player_jump', {
-                name: player.name
-            });
-        }
+        socket.emit('on_player_jump', playerData(player));
     }
 
     // crouch
@@ -358,14 +352,8 @@ function update()
 
     tickNumber += 1;
     // ~ 8sec per 1k ticks
-    if (tickNumber % 500 === 0) {
-        socket.emit('on_sync_pos', {
-            name: player.name,
-            pos: {
-                x: player.x,
-                y: player.y
-            }
-        });
+    if (tickNumber % 50 === 0) {
+        socket.emit('on_sync_pos', playerData(player));
     }
 
     player.didCrouch = shouldCrouch;
