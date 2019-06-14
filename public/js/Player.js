@@ -163,6 +163,12 @@ class Player extends Phaser.Physics.Arcade.Sprite {
     destroyPlayer() {
         this.nameTag.destroy();
         this.healthBar.destroy();
+        this.buffs.map(buff => {
+            if (buff.debugText !== undefined) {
+                buff.debugText.destroy();
+            }
+            clearTimeout(buff.timeoutHandler);
+        });
         this.destroy();
     };
 
@@ -238,7 +244,9 @@ class Player extends Phaser.Physics.Arcade.Sprite {
         if (buffIndex > -1) {
             var buff = this.buffs[buffIndex];
             if (this.shouldShowBuffTimes || game.config.physics.arcade.debug) {
-                buff.debugText.destroy();
+                if (buff.debugText !== undefined) {
+                    buff.debugText.destroy();
+                }
             }
             clearTimeout(buff.timeoutHandler);
             this.buffs.splice(buffIndex, 1);
