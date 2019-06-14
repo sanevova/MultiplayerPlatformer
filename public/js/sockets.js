@@ -89,4 +89,12 @@ function configureSocketEvents(socket) {
             attacker.hit(target, attackType);
         }
     });
+
+
+    socket.on('player_did_cast', (playerData, spellType) => {
+        match = findPlayer(playerData.name);
+        if (match) {
+            match.castSpell(spellType);
+        }
+    });
 };

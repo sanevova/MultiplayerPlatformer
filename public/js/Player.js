@@ -1,3 +1,16 @@
+const SPELL_TYPES = {
+    SPRINT: 'sprint',
+};
+const BUFF_TYPES = {
+    SPRINT: 'sprint',
+};
+kBuffDurations = {
+    'sprint': 10 * 1000 // 10s
+};
+
+eps = 0.00001;
+kSprintSpeedMultiplier = 1.5;
+
 class Player extends Phaser.Physics.Arcade.Sprite {
     constructor(scene, x, y, name, texture = 'adventurer') {
         // init and bind to scene
@@ -14,6 +27,14 @@ class Player extends Phaser.Physics.Arcade.Sprite {
         this.nameTag = scene.add.text(x, y, name, kNameFont);
         // health bar object
         this.healthBar = scene.add.graphics();
+
+        this.buffs = [];
+        this.shouldShowBuffTimes = true;
+
+        // trace animation
+        this.shouldTrace = false;
+        this.traces = [];
+        this.kTraceCount = 5;
         return this;
     }
 
@@ -34,15 +55,25 @@ class Player extends Phaser.Physics.Arcade.Sprite {
             //     aPlayer.anims.play('idle', true);
             // }
         }
+
+        // draw trace animation
+        this.trace();
+
+        // spells & buffs
+        if (this.buffs.some(b => b.type = BUFF_TYPES.SPRINT)) {
+            this.moveSpeed *= kSprintSpeedMultiplier;
+        }
     }
 
     _drawChildren() {
         var yOffset = 5;
         var healthBarWidth = this.health / 100 * healthBarMaxWidth;
 
+        var middleX = this.x - this.nameTag.width / 2;
+        var startY = this.y - this.displayHeight;
         // draw name tag
         this.nameTag.setX(this.x - this.nameTag.width / 2);
-        this.nameTag.setY(this.y - this.displayHeight - 2 * yOffset);
+        this.nameTag.setY(startY - 2 * yOffset);
         this.nameTag.setText(`${this.name} (${this.health})`);
 
         // draw health bar
@@ -63,6 +94,23 @@ class Player extends Phaser.Physics.Arcade.Sprite {
             healthBarHeight,
             2);
 
+        // spells & buffs
+        if (this.shouldShowBuffTimes || game.config.physics.arcade.debug) {
+            this.buffs.map((buff, index) => {
+                var durationLeft = parseFloat(
+                    // maxDuration - currentDuration
+                    (buff.maxDuration - (Date.now() - buff.startTime)) / 1000
+                ).toFixed(1);
+                if (!buff.debugText) {
+                    buff.debugText = scene.add.text(0, 0, '', kNameFont);
+                }
+                buff.debugText.setText(`${buff.type}: ${durationLeft}s`);
+                buff.debugText.setPosition(
+                    this.nameTag.x,
+                    this.nameTag.y - this.nameTag.height - 3 * yOffset - 30 * index
+                );
+            });
+        }
     }
 
     jump() {
@@ -123,4 +171,99 @@ class Player extends Phaser.Physics.Arcade.Sprite {
             Math.max(0, target.health - attackDamageByType[attackType]);
     };
 
+    setShouldTrace(shouldTrace) {
+        this.shouldTrace = shouldTrace;
+        this.traces.map(t => t.setVisible(shouldTrace && this.isMoving));
+    }
+
+    isMoving() {
+        return Math.abs(this.body.speed) > 20
+    }
+    trace() {
+        if (!this.shouldTrace) {
+
+            return;
+        }
+        this.traces.map(t => t.setVisible(this.isMoving()));
+        if (this.traces.length === 0) {
+            for (i = 0; i < this.kTraceCount; ++i) {
+
+                this.traces.push(scene.add.sprite(player.x, player.y, player.texture.key﻿﻿﻿﻿)﻿.setScale(2));
+            }
+        }
+        if (tickNumber % 15 === 0) {
+            this.traces.shift().destroy();
+            this.traces.push(
+                scene.add.sprite(this.x, this.y, this.texture.key﻿﻿)
+                    .setScale(2)
+                    .setFrame(this.frame.name)﻿
+                );
+            for (i = 0; i < this.kTraceCount; ++i) {
+                this.traces[i].setAlpha(( i + 1) / (this.kTraceCount + 2));
+            }
+        }
+    }
+
+    _buffTimeoutHandler(buffType, buffDuration) {
+        return (function(aPlayer, type, duration) {
+            return setTimeout(() => aPlayer.removeBuff(type), duration);
+        })(this, buffType, buffDuration);
+    }
+
+    applyBuff(buffType, buffDuration, dispellCallback = null) {
+        var existingBuff = this.buffs.find(b => b.type === buffType);
+        if (existingBuff === undefined) {
+            console.log('not found', buffType, existingBuff, this.buffs)
+            this.buffs.push({
+                type: buffType,
+                startTime: Date.now(),
+                maxDuration: buffDuration,
+                timeoutHandler: this._buffTimeoutHandler(buffType, buffDuration),
+                dispellCallback: dispellCallback
+            });
+        } else {
+            // always rewrite buffs for now
+            // maybe change to only leave the longer one in the future
+            clearTimeout(existingBuff.timeoutHandler);
+            // dispell callback here?
+            existingBuff.timeoutHandler =
+                this._buffTimeoutHandler(buffType, buffDuration);
+            existingBuff.startTime = Date.now();
+        }
+    }
+
+    removeBuff(buffType) {
+        // console.log('removing buff', buffType, this.buffs);
+        var buffIndex = this.buffs.findIndex(b => b.type === buffType);
+        if (buffIndex > -1) {
+            var buff = this.buffs[buffIndex];
+            if (this.shouldShowBuffTimes || game.config.physics.arcade.debug) {
+                buff.debugText.destroy();
+            }
+            clearTimeout(buff.timeoutHandler);
+            this.buffs.splice(buffIndex, 1);
+            if (buff.dispellCallback !== null) {
+                console.log('dispell callback on', this.name, buffType);
+                buff.dispellCallback(this);
+            }
+        }
+    }
+
+    castSpell(spellType) {
+        switch (spellType) {
+            case SPELL_TYPES.SPRINT:
+                this.setShouldTrace(true);
+                this.applyBuff(
+                    BUFF_TYPES.SPRINT,
+                    kBuffDurations[BUFF_TYPES.SPRINT],
+                    (caster) => (caster.setShouldTrace(false))
+                );
+                break;
+        }
+        if (player === this) {
+            // only send cast signal from this client
+            socket.emit('on_player_cast', playerData(this), spellType);
+        }
+
+    }
 };

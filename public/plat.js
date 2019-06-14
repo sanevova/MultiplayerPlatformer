@@ -61,8 +61,6 @@ var score = 0;
 var scoreText;
 var socket;
 var scene;
-var myname;
-
 
 var game = new Phaser.Game(config);
 
@@ -166,6 +164,13 @@ function create() {
     // animations
     loadAnimations(this);
     cursors = this.input.keyboard.createCursorKeys();
+
+    scene.input.keyboard.on('keydown', function (eventName, event) {
+        if (eventName.key === '1') {
+            eventName.stopImmediatePropagation();
+            player.castSpell(SPELL_TYPES.SPRINT);
+        }
+    });
 
     // unimportant stuff
     createExtra();
@@ -306,19 +311,10 @@ function update()
     }
 
     if (shouldMoveLeft) {
-        player.setVelocityX(-moveSpeed);
-
-        player.flipX = 1;
-        if (shouldAnimateMovement) {
-            player.anims.play('run', true);
-        }
+        player.moveLeft();
     }
     else if (shouldMoveRight) {
-        player.setVelocityX(moveSpeed);
-        player.flipX = 0;
-        if (shouldAnimateMovement) {
-            player.anims.play('run', true);
-        }
+        player.moveRight();
     }
     else {
         player.setVelocityX(0);
@@ -351,8 +347,9 @@ function update()
     bindAttack(player, shouldBow, 'attack_bow' + (player.airborne ? '_jump' : ''));
 
     tickNumber += 1;
-    // ~ 8sec per 1k ticks
+    // ~ 7sec per 1k ticks
     if (tickNumber % 50 === 0) {
+        // ~3 qps per client
         socket.emit('on_sync_pos', playerData(player));
     }
 

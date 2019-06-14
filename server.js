@@ -37,14 +37,12 @@ console.log("ROFL");
 io.on('connection', (socket) => {
 
     socket.on('disconnect', function() {
-        console.log('dc', socket.id, game.players, game.sockets);
         name = game.sockets[socket.id];
         playerIndex = game.players.findIndex(x => x.name === name);
         if (playerIndex >= 0) {
             game.players.splice(playerIndex, 1);
             delete game.sockets[socket.id];
             socket.broadcast.emit('player_did_disconnect', name);
-            console.log('deleted', game.players, game.sockets);
         }
     });
     socket.on('on_player_connect', (player) => {
@@ -91,6 +89,9 @@ io.on('connection', (socket) => {
     socket.on('on_player_hit', (hitData) => {
         socket.emit('player_did_hit', hitData);
         socket.broadcast.emit('player_did_hit', hitData);
+    });
+    socket.on('on_player_cast', (playerData, spellType) => {
+        socket.broadcast.emit('player_did_cast', playerData, spellType);
     });
 
     socket.on('on_sync_pos', (player) => {
