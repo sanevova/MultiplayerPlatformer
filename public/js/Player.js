@@ -186,7 +186,7 @@ class Player extends Phaser.Physics.Arcade.Sprite {
     }
 
     hit(target, attackType) {
-        this.receiveDamage(attackDamageByType[attackType]);
+        target.receiveDamage(attackDamageByType[attackType]);
     };
 
     setShouldTrace(shouldTrace) {
@@ -232,7 +232,7 @@ class Player extends Phaser.Physics.Arcade.Sprite {
     applyBuff(buffType, buffDuration, dispellCallback = null) {
         var existingBuff = this.buffs.find(b => b.type === buffType);
         if (existingBuff === undefined) {
-            console.log('not found', buffType, existingBuff, this.buffs)
+            console.log('not found', buffType, existingBuff, this.buffs);
             this.buffs.push({
                 type: buffType,
                 startTime: Date.now(),
