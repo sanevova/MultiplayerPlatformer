@@ -173,15 +173,15 @@ function create() {
     scene.input.keyboard.on('keydown', function (eventName, event) {
         if (eventName.key === '1') {
             eventName.stopImmediatePropagation();
-            player.castSpell(SPELL_TYPES.SPRINT);
+            player.castSpell(SPELLS.SPRINT);
         }
         if (eventName.key === '2') {
             eventName.stopImmediatePropagation();
-            player.castSpell(SPELL_TYPES.FIREBALL);
+            player.castSpell(SPELLS.FIREBALL);
         }
         if (eventName.key === '3') {
             eventName.stopImmediatePropagation();
-            player.castSpell(SPELL_TYPES.ICEBALL);
+            player.castSpell(SPELLS.ICEBALL);
         }
     });
 

@@ -1,4 +1,4 @@
-const SPELL_TYPES = {
+const SPELLS = {
     SPRINT: 'sprint',
     FIREBALL: 'fireball',
     ICEBALL: 'iceball',
@@ -195,12 +195,11 @@ class Player extends Phaser.Physics.Arcade.Sprite {
     }
 
     isMoving() {
-        return Math.abs(this.body.speed) > 20
+        return Math.abs(this.body.speed) > 20;
     }
 
     trace() {
         if (!this.shouldTrace) {
-
             return;
         }
         this.traces.map(t => t.setVisible(this.isMoving()));
@@ -213,12 +212,12 @@ class Player extends Phaser.Physics.Arcade.Sprite {
         if (tickNumber % 15 === 0) {
             this.traces.shift().destroy();
             this.traces.push(
-                scene.add.sprite(this.x, this.y, this.texture.key﻿﻿)
+                scene.add.sprite(this.x, this.y, this.texture.key)
                     .setScale(2)
-                    .setFrame(this.frame.name)﻿
-                );
+                    .setFrame(this.frame.name)
+            );
             for (i = 0; i < this.kTraceCount; ++i) {
-                this.traces[i].setAlpha(( i + 1) / (this.kTraceCount + 2));
+                this.traces[i].setAlpha((i + 1) / (this.kTraceCount + 2));
             }
         }
     }
@@ -272,7 +271,7 @@ class Player extends Phaser.Physics.Arcade.Sprite {
 
     castSpell(spellType) {
         switch (spellType) {
-            case SPELL_TYPES.SPRINT:
+            case SPELLS.SPRINT:
                 this.setShouldTrace(true);
                 this.applyBuff(
                     BUFF_TYPES.SPRINT,
@@ -280,8 +279,8 @@ class Player extends Phaser.Physics.Arcade.Sprite {
                     (caster) => (caster.setShouldTrace(false))
                 );
                 break;
-            case SPELL_TYPES.FIREBALL:
-            case SPELL_TYPES.ICEBALL:
+            case SPELLS.FIREBALL:
+            case SPELLS.ICEBALL:
                 var projectile = new Projectile(
                     scene,
                     this, // creator
