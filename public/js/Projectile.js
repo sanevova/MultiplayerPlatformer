@@ -1,13 +1,13 @@
 kProjectileSpeed = {
     'arrow': 1000,
     'fireball': 800,
-    'iceball': 500
+    'iceball': 600
 };
 
 kProjectileDamage = {
     'arrow': 10,
     'fireball': 30,
-    'iceball': 50
+    'iceball': 40
 };
 
 class Projectile extends Phaser.Physics.Arcade.Sprite {
@@ -15,6 +15,8 @@ class Projectile extends Phaser.Physics.Arcade.Sprite {
         let x = creator.x;
         let y = creator.y - creator.displayHeight / 4;
         super(scene, x, y, texture);
+        this.type = type;
+        this.creator = creator;
         scene.add.existing(this);
         scene.physics.add.existing(this);
         scene.physics.add.collider(
@@ -23,19 +25,23 @@ class Projectile extends Phaser.Physics.Arcade.Sprite {
             (projectile, platform) => projectile.didCollideWithPlatform(platform));
 
         // global state = questionable
-        game.players.map(
-            aPlayer => scene.physics.add.collider(this, aPlayer,
-                (projectile, target) => projectile.didCollideWithPlayer(target)
-            )
-        );
+        game.players.map(aPlayer => {
+            // don't add collisions with player who created the projectile
+            if (aPlayer !== this.creator) {
+                scene.physics.add.collider(
+                    this,
+                    aPlayer,
+                    (projectile, target) =>
+                        projectile.didCollideWithPlayer(target)
+                );
+            }
+        });
 
         // minimize knockback
         this.setMass(0.000001);
-        this.body.setAllowGravity﻿(false);
-        this.body.setCollideWorldBounds(true﻿);﻿﻿
-        this.body.onWorldBounds = true﻿﻿;
-        this.type = type;
-        this.creator = creator;
+        this.body.setAllowGravity(false);
+        this.body.setCollideWorldBounds(true);
+        this.body.onWorldBounds = true;
 
         // fire/ice ball model
         this.setScale(3).setRotation(Math.PI);
