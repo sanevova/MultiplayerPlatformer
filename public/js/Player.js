@@ -17,15 +17,8 @@ class Player extends Phaser.Physics.Arcade.Sprite {
     constructor(scene, x, y, name, texture = 'adventurer') {
         // init and bind to scene
         super(scene, x, y, texture);
-        // var fb = new Phaser.GameObjects.Sprite(scene,x,y, 'fireball-small');
-        // if (name === "sane")
-        // this.fb = scene.add.sprite(x+100,y, 'fireball').setScale(3).setRotation(Math.PI);
-        // existing(fb);
-        // // scene.physics.add.existing(fb);
-        // scene.add.existing(fb);
         scene.add.existing(this);
         scene.physics.add.existing(this);
-        // this.setGravityX(20000);
 
         this.name = name;
         this.setSize(25, 34).setScale(2)
