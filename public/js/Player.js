@@ -1,5 +1,7 @@
 const SPELL_TYPES = {
     SPRINT: 'sprint',
+    FIREBALL: 'fireball',
+    ICEBALL: 'iceball',
 };
 const BUFF_TYPES = {
     SPRINT: 'sprint',
@@ -15,8 +17,15 @@ class Player extends Phaser.Physics.Arcade.Sprite {
     constructor(scene, x, y, name, texture = 'adventurer') {
         // init and bind to scene
         super(scene, x, y, texture);
+        // var fb = new Phaser.GameObjects.Sprite(scene,x,y, 'fireball-small');
+        // if (name === "sane")
+        // this.fb = scene.add.sprite(x+100,y, 'fireball').setScale(3).setRotation(Math.PI);
+        // existing(fb);
+        // // scene.physics.add.existing(fb);
+        // scene.add.existing(fb);
         scene.add.existing(this);
         scene.physics.add.existing(this);
+        // this.setGravityX(20000);
 
         this.name = name;
         this.setSize(25, 34).setScale(2)
@@ -29,17 +38,24 @@ class Player extends Phaser.Physics.Arcade.Sprite {
         this.healthBar = scene.add.graphics();
 
         this.buffs = [];
+        this.projectiles = [];
         this.shouldShowBuffTimes = true;
 
         // trace animation
         this.shouldTrace = false;
         this.traces = [];
         this.kTraceCount = 5;
+
         return this;
     }
 
     update() {
         this._drawChildren();
+        this.projectiles.map(p => {
+            if (p.body.touching.left || p.body.touching.right) {
+                p.destroy();
+            }
+        });
 
         // state
         this.airborne = !this.body.touching.down;
@@ -172,9 +188,12 @@ class Player extends Phaser.Physics.Arcade.Sprite {
         this.destroy();
     };
 
+    receiveDamage(damageAmount) {
+        this.health = Math.max(0, this.health - damageAmount);
+    }
+
     hit(target, attackType) {
-        target.health =
-            Math.max(0, target.health - attackDamageByType[attackType]);
+        this.receiveDamage(attackDamageByType[attackType]);
     };
 
     setShouldTrace(shouldTrace) {
@@ -185,6 +204,7 @@ class Player extends Phaser.Physics.Arcade.Sprite {
     isMoving() {
         return Math.abs(this.body.speed) > 20
     }
+
     trace() {
         if (!this.shouldTrace) {
 
@@ -265,6 +285,15 @@ class Player extends Phaser.Physics.Arcade.Sprite {
                     BUFF_TYPES.SPRINT,
                     kBuffDurations[BUFF_TYPES.SPRINT],
                     (caster) => (caster.setShouldTrace(false))
+                );
+                break;
+            case SPELL_TYPES.FIREBALL:
+            case SPELL_TYPES.ICEBALL:
+                var projectile = new Projectile(
+                    scene,
+                    this, // creator
+                    spellType, // texture
+                    spellType // type
                 );
                 break;
         }

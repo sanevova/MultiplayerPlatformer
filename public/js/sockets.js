@@ -20,7 +20,9 @@ function configureSocketEvents(socket) {
     });
     socket.on('did_sync_pos', (playerData) => {
         aPlayer = findPlayer(playerData.name);
-        aPlayer.setPosition(playerData.pos.x, playerData.pos.y);
+        if (aPlayer) {
+            aPlayer.setPosition(playerData.pos.x, playerData.pos.y);
+        }
     });
 
     socket.on('player_did_jump', (playerData) => {

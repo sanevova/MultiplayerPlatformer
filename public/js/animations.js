@@ -1,4 +1,5 @@
 function loadAnimations(scene) {
+    // adventurer
     scene.anims.create({
         key: 'idle',
         frames: scene.anims.generateFrameNumbers('adventurer', { start: 0, end: 3 }),
@@ -53,5 +54,25 @@ function loadAnimations(scene) {
         frames: scene.anims.generateFrameNumbers('adventurer-bow', { start: 9, end: 14 }),
         duration: bowAttackDuration,
         repeat: 0
+    });
+
+    // projectiles
+    scene.anims.create({
+        key: 'fireball-burn',
+        frames: scene.anims.generateFrameNumbers('fireball', { start: 0, end: 59 }),
+        frameRate: 30,
+        repeat: -1
+    });
+    scene.anims.create({
+        key: 'iceball-burn',
+        frames: scene.anims.generateFrameNumbers('iceball', { start: 0, end: 59 }),
+        frameRate: 30,
+        repeat: -1
+    });
+    scene.anims.create({
+        key: 'fireball-small-burn',
+        frames: scene.anims.generateFrameNumbers('fireball-small', { start: 0, end: 59 }),
+        frameRate: 30,
+        repeat: -1
     });
 }

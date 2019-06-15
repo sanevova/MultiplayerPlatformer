@@ -73,6 +73,10 @@ function preload ()
     this.load.image('platform', 'assets/blocks/platform.png');
     this.load.spritesheet('adventurer', 'assets/adventurer/adventurer-sheet.png', { frameWidth: 50, frameHeight: 37 });
     this.load.spritesheet('adventurer-bow', 'assets/adventurer/adventurer-bow-sheet.png', { frameWidth: 50, frameHeight: 37 });
+    this.load.spritesheet('fireball-small', 'assets/fire/fires/Small_Fireball_10x26.png', { frameWidth: 10, frameHeight: 26 });
+    this.load.spritesheet('fireball', 'assets/fire/fires/Fireball_68x9.png', { frameWidth: 68, frameHeight: 9 });
+    this.load.spritesheet('iceball', 'assets/fire/fires/Iceball_84x9.png', { frameWidth: 84, frameHeight: 9 });
+    this.load.spritesheet('arrow', 'assets/other/arrow.png', { frameWidth: 434, frameHeight: 63 });
 
     this.load.image('sky', 'assets/blocks/back-walls.png');
     this.load.image('logo', 'assets/blocks/phaser3-logo.png');
@@ -165,10 +169,25 @@ function create() {
     loadAnimations(this);
     cursors = this.input.keyboard.createCursorKeys();
 
+    // spell keybinds
     scene.input.keyboard.on('keydown', function (eventName, event) {
         if (eventName.key === '1') {
             eventName.stopImmediatePropagation();
             player.castSpell(SPELL_TYPES.SPRINT);
+        }
+        if (eventName.key === '2') {
+            eventName.stopImmediatePropagation();
+            player.castSpell(SPELL_TYPES.FIREBALL);
+        }
+        if (eventName.key === '3') {
+            eventName.stopImmediatePropagation();
+            player.castSpell(SPELL_TYPES.ICEBALL);
+        }
+    });
+
+    scene.physics.world.on('worldbounds', function(body) {
+        if (body.gameObject instanceof Projectile) {
+            body.gameObject.destroy();
         }
     });
 
