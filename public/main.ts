@@ -138,7 +138,7 @@ function randname() {
 }
 
 function createMyPlayer() {
-    let player = createPlayerFromPlayerData({
+    player = createPlayerFromPlayerData({
         name:  getUrlParameter('name') || randname(),
         pos: {
             x: 100,
