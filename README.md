@@ -1,3 +1,11 @@
+# COMPILE
+```
+cd public
+browserify -x uws main.ts -p [ tsify ] > bundle.js
+```
+
+
+
 
 # Socket.IO Chat
 
