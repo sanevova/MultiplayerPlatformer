@@ -41,58 +41,58 @@ export function configureSocketEvents(socket) {
         // add game object for new player
         let jumpingPlayer = findPlayer(playerData.name);
         if (jumpingPlayer) {
-            jumpingPlayer.jump();
             jumpingPlayer.setPosition(playerData.pos.x, playerData.pos.y);
+            jumpingPlayer.jump();
         }
     });
     socket.on('player_did_crouch', (playerData) => {
         let match = findPlayer(playerData.name);
         if (match) {
-            match.crouch();
             match.setPosition(playerData.pos.x, playerData.pos.y);
+            match.crouch();
         }
     });
     socket.on('player_did_stop_crouch', (playerData) => {
         let match = findPlayer(playerData.name);
         if (match) {
-            match.stopCrouch();
             match.setPosition(playerData.pos.x, playerData.pos.y);
+            match.stopCrouch();
         }
     });
     socket.on('player_did_moveLeft', (playerData) => {
         let match = findPlayer(playerData.name);
         if (match) {
-            match.moveLeft();
             match.setPosition(playerData.pos.x, playerData.pos.y);
+            match.moveLeft();
         }
     });
     socket.on('player_did_stop_moveLeft', (playerData) => {
         let match = findPlayer(playerData.name);
         if (match) {
-            match.stopMove();
             match.setPosition(playerData.pos.x, playerData.pos.y);
+            match.stopMove();
         }
     });
     socket.on('player_did_moveRight', (playerData) => {
         let match = findPlayer(playerData.name);
         if (match) {
-            match.moveRight();
             match.setPosition(playerData.pos.x, playerData.pos.y);
+            match.moveRight();
         }
     });
     socket.on('player_did_stop_moveRight', (playerData) => {
         let match = findPlayer(playerData.name);
         if (match) {
-            match.stopMove();
             match.setPosition(playerData.pos.x, playerData.pos.y);
+            match.stopMove();
         }
     });
 
     socket.on('player_did_attack', (playerData, attackType) => {
         let match = findPlayer(playerData.name);
         if (match) {
-            match.attack(attackType);
             match.setPosition(playerData.pos.x, playerData.pos.y);
+            match.attack(attackType);
         }
     });
     socket.on('player_did_hit', (hitData) => {

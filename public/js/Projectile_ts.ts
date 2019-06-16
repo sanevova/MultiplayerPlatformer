@@ -6,8 +6,8 @@ import {game} from '../main'
 
 var kProjectileSpeed = {
     'arrow': 750,
-    'fireball': 600,
-    'iceball': 450
+    'fireball': 550,
+    'iceball': 400
 };
 
 var kProjectileDamage = {

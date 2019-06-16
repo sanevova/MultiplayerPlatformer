@@ -34,8 +34,8 @@ var attackDamageByType = {
 
 var eps = 0.00001;
 var kSprintSpeedMultiplier = 1.5;
-export var moveSpeedNormal = 270;
-var jumpSpeedNormal = 420;
+export var moveSpeedNormal = 200;
+var jumpSpeedNormal = 470;
 var healthBarMaxWidth = 70;
 var healthBarHeight = 10;
 var healthBarOutline = 2;
