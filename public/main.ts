@@ -30,7 +30,7 @@ var config = {
     physics: {
         default: 'arcade',
         arcade: {
-            gravity: { y: 600 },
+            gravity: { y: 450 },
             debug: isLocalhost()
         }
     },
@@ -189,7 +189,6 @@ function create() {
             player.castSpell(SPELLS.SPRINT);
         } else if (eventName.key === '2') {
             eventName.stopImmediatePropagation();
-            console.log('player', player);
             player.castSpell(SPELLS.FIREBALL);
         } else if (eventName.key === '3') {
             eventName.stopImmediatePropagation();
