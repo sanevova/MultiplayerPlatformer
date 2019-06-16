@@ -1,7 +1,7 @@
 // import './phaser'
 import 'phaser';
 import {Projectile} from './Projectile_ts'
-import {bindAttack, playerData} from '../main'
+import {game, socket, tickNumber, bindAttack, playerData} from '../main'
 
 console.log('roflxd');
 
@@ -260,8 +260,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.traces.map(t => t.setVisible(this.isMoving()));
         if (this.traces.length === 0) {
             for (i = 0; i < this.kTraceCount; ++i) {
-
-                this.traces.push(this.scene.add.sprite(this.x, this.y, this.texture.key﻿﻿﻿﻿)﻿.setScale(2));
+                this.traces.push(this.scene.add.sprite(this.x, this.y, this.texture.key).setScale(2));
             }
         }
         // @ts-ignore
@@ -271,6 +270,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
                 this.scene.add.sprite(this.x, this.y, this.texture.key)
                     .setScale(2)
                     .setFrame(this.frame.name)
+                    .setFlipX(this.flipX)
             );
             for (var i = 0; i < this.kTraceCount; ++i) {
                 this.traces[i].setAlpha((i + 1) / (this.kTraceCount + 2));
@@ -349,7 +349,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
                 break;
         }
         // @ts-ignore
-        if (player === this) {
+        if (game.player === this) {
             // only send cast signal from this client
             // @ts-ignore
             socket.emit('on_player_cast', playerData(this), spellType);

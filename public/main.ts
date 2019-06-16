@@ -10,12 +10,11 @@ var world = {
     width: window.innerWidth,
     height: window.innerHeight
 };
-// var xd = connectAs('a');//isLocalhost();
 
 export var attackDuration = 500;
 export var bowAttackDuration = 1000;
 
-var tickNumber = 0;
+export var tickNumber = 0;
 
 var controlsString = 'MOVE=WASD ATTCK=QER CROUCH=C,S HIDE=Z';
 
@@ -47,12 +46,14 @@ var stars;
 var cursors;
 var score = 0;
 var scoreText;
-var socket;
+export var socket;
 var scene;
 
 // declare var game: Phaser.Game;
 class YungSkryllaGame extends Phaser.Game {
     players: Player[];
+    player: Player;
+
     constructor(config) {
         super(config);
         this.players = [];
@@ -104,8 +105,8 @@ function preload() {
 }
 
 interface Position {
-    x: number,
-    y: number
+    x: number;
+    y: number;
 }
 
 interface PlayerData {
@@ -145,6 +146,7 @@ function createMyPlayer() {
             y: 450
         }
     });
+    game.player = player;
     game.players.push(player);
     socket = connectAs(playerData(player));
     return player;
@@ -185,12 +187,11 @@ function create() {
         if (eventName.key === '1') {
             eventName.stopImmediatePropagation();
             player.castSpell(SPELLS.SPRINT);
-        }
-        if (eventName.key === '2') {
+        } else if (eventName.key === '2') {
             eventName.stopImmediatePropagation();
+            console.log('player', player);
             player.castSpell(SPELLS.FIREBALL);
-        }
-        if (eventName.key === '3') {
+        } else if (eventName.key === '3') {
             eventName.stopImmediatePropagation();
             player.castSpell(SPELLS.ICEBALL);
         }
