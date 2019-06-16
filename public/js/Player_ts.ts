@@ -67,7 +67,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     moveSpeed: number;
     shouldAnimateMovement: boolean;
     isAttacking: boolean;
-    isCrouching: boolean
+    isCrouching: boolean;
+    shouldMove: boolean;
 
     constructor(scene, x, y, name, texture = 'adventurer') {
         // init and bind to scene
@@ -93,6 +94,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.shouldTrace = false;
         this.traces = [];
         this.kTraceCount = 5;
+        this.shouldMove = false;
 
         return this;
     }
@@ -126,6 +128,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         // spells & buffs
         if (this.buffs.some(b => b.type = BUFF_TYPES.SPRINT)) {
             this.moveSpeed *= kSprintSpeedMultiplier;
+        }
+
+        if (this.shouldMove) {
+            let isLookingLeft = this.flipX;
+            if (isLookingLeft) {
+                this.moveLeft();
+            } else {
+                this.moveRight();
+            }
         }
     }
 

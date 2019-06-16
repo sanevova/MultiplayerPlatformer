@@ -63,6 +63,7 @@ export function configureSocketEvents(socket) {
         let match = findPlayer(playerData.name);
         if (match) {
             match.setPosition(playerData.pos.x, playerData.pos.y);
+            match.shouldMove = true;
             match.moveLeft();
         }
     });
@@ -70,6 +71,7 @@ export function configureSocketEvents(socket) {
         let match = findPlayer(playerData.name);
         if (match) {
             match.setPosition(playerData.pos.x, playerData.pos.y);
+            match.shouldMove = false;
             match.stopMove();
         }
     });
@@ -77,6 +79,7 @@ export function configureSocketEvents(socket) {
         let match = findPlayer(playerData.name);
         if (match) {
             match.setPosition(playerData.pos.x, playerData.pos.y);
+            match.shouldMove = true;
             match.moveRight();
         }
     });
@@ -84,6 +87,7 @@ export function configureSocketEvents(socket) {
         let match = findPlayer(playerData.name);
         if (match) {
             match.setPosition(playerData.pos.x, playerData.pos.y);
+            match.shouldMove = false;
             match.stopMove();
         }
     });

@@ -291,6 +291,10 @@ function update() {
     let shouldUppercut = keyR.isDown;
     let shouldBow = keyF.isDown;
 
+    if (shouldMoveLeft && shouldMoveRight) {
+        shouldMoveLeft = shouldMoveRight = false;
+    }
+
     // touch contorls
     var pointer = this.input.activePointer;
     if (pointer.isDown) {
@@ -376,9 +380,9 @@ function update() {
 
     tickNumber += 1;
     // ~ 7sec per 1k ticks
-    if (tickNumber % 50 === 0) {
+    if (tickNumber % 5000 === 0) {
         // ~3 qps per client
-        socket.emit('on_sync_pos', playerData(player));
+        // socket.emit('on_sync_pos', playerData(player));
     }
 
     player.didCrouch = shouldCrouch;
