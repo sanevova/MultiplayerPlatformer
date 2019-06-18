@@ -3,7 +3,8 @@ import 'phaser';
 import {isLocalhost, connectAs} from './js/client_ts'
 import {loadAnimations} from './js/animations_ts'
 import {configureSocketEvents} from './js/sockets_ts'
-import {Player, SPELLS, moveSpeedNormal} from './js/Player_ts'
+import {Player, moveSpeedNormal} from './js/Player_ts'
+import {SpellName} from './js/spells/Spell'
 import {Projectile} from './js/Projectile_ts'
 
 var world = {
@@ -186,13 +187,13 @@ function create() {
     scene.input.keyboard.on('keydown', function (eventName, event) {
         if (eventName.key === '1') {
             eventName.stopImmediatePropagation();
-            player.castSpell(SPELLS.SPRINT);
+            player.castSpell(SpellName.SPRINT);
         } else if (eventName.key === '2') {
             eventName.stopImmediatePropagation();
-            player.castSpell(SPELLS.FIREBALL);
+            player.castSpell(SpellName.FIREBALL);
         } else if (eventName.key === '3') {
             eventName.stopImmediatePropagation();
-            player.castSpell(SPELLS.ICEBALL);
+            player.castSpell(SpellName.ICEBALL);
         }
     });
 

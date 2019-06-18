@@ -1,5 +1,9 @@
 // import './phaser'
 import 'phaser';
+import {Spell, SpellName} from './spells/Spell'
+import {Sprint} from './spells/Sprint'
+import {Fireball} from './spells/Fireball'
+import {Iceball} from './spells/Iceball'
 import {Projectile} from './Projectile_ts'
 import {game, socket, tickNumber, bindAttack, playerData} from '../main'
 
@@ -17,6 +21,7 @@ export const SPELLS = {
     FIREBALL: 'fireball',
     ICEBALL: 'iceball',
 };
+
 const BUFF_TYPES = {
     SPRINT: 'sprint',
 };
@@ -41,8 +46,15 @@ var healthBarHeight = 10;
 var healthBarOutline = 2;
 var healthBarColor = 0x84FB21;
 
+//[name in SpellName]: Spell; // requires all names to be present in map
+type PlayerSpells = {[name: string]: Spell};
+
+export enum BuffName {
+    SPRINT = 'sprint'
+}
+
 interface Buff {
-    type: string;
+    name: BuffName;
     startTime: number;
     maxDuration: number;
     timeoutHandler: any;//number;
@@ -55,6 +67,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     health: number;
     nameTag: Phaser.GameObjects.Text;
     healthBar: Phaser.GameObjects.Graphics;
+    spells: PlayerSpells;
     buffs: Buff[];
     projectiles: Projectile[];
 
@@ -87,6 +100,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.healthBar = scene.add.graphics();
 
         this.buffs = [];
+        this.spells = {};
+        this.spells[SpellName.SPRINT] = new Sprint(this);
+        this.spells[SpellName.FIREBALL] = new Fireball(this);
+        this.spells[SpellName.ICEBALL] = new Iceball(this);
         this.projectiles = [];
         this.shouldShowBuffTimes = true;
 
@@ -126,7 +143,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.trace();
 
         // spells & buffs
-        if (this.buffs.some(b => b.type = BUFF_TYPES.SPRINT)) {
+        if (this.buffs.some(b => b.name === BuffName.SPRINT)) {
             this.moveSpeed *= kSprintSpeedMultiplier;
         }
 
@@ -178,7 +195,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
                     // @ts-ignore
                     (buff.maxDuration - (Date.now() - buff.startTime)) / 1000
                 ).toFixed(1);
-                buff.debugText.setText(`${buff.type}: ${durationLeft}s`);
+                buff.debugText.setText(`${buff.name}: ${durationLeft}s`);
                 buff.debugText.setPosition(
                     this.nameTag.x,
                     this.nameTag.y - this.nameTag.height - 3 * yOffset - 30 * index
@@ -289,22 +306,23 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         }
     }
 
-    _buffTimeoutHandler(buffType, buffDuration) {
-        return (function(aPlayer, type, duration) {
-            return setTimeout(() => aPlayer.removeBuff(type), duration);
-        })(this, buffType, buffDuration);
+    _buffTimeoutHandler(buffName: BuffName, buffDuration) {
+        return (function(aPlayer, name, duration) {
+            return setTimeout(() => aPlayer.removeBuff(name), duration);
+        })(this, buffName, buffDuration);
     }
 
-    applyBuff(buffType, buffDuration, dispellCallback = null) {
+    applyBuff(buffName: BuffName, buffDuration, dispellCallback = null) {
+        console.log(`${buffName}, enum: ${BuffName.SPRINT}`);
         // @ts-ignore target is es6 in tsconfig????????
-        var existingBuff = this.buffs.find(b => b.type === buffType);
+        var existingBuff = this.buffs.find(b => b.name === buffName);
         if (existingBuff === undefined) {
-            console.log('not found', buffType, existingBuff, this.buffs);
+            console.log('not found', buffName, existingBuff, this.buffs);
             this.buffs.push({
-                type: buffType,
+                name: buffName,
                 startTime: Date.now(),
                 maxDuration: buffDuration,
-                timeoutHandler: this._buffTimeoutHandler(buffType, buffDuration),
+                timeoutHandler: this._buffTimeoutHandler(buffName, buffDuration),
                 dispellCallback: dispellCallback,
                 debugText: this.scene.add.text(0, 0, '', kNameFont)
             });
@@ -314,14 +332,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             clearTimeout(existingBuff.timeoutHandler);
             // dispell callback here?
             existingBuff.timeoutHandler =
-                this._buffTimeoutHandler(buffType, buffDuration);
+                this._buffTimeoutHandler(buffName, buffDuration);
             existingBuff.startTime = Date.now();
         }
     }
 
-    removeBuff(buffType) {
+    removeBuff(buffName: BuffName) {
         // @ts-ignore target is es6 in tsconfig????????
-        var buffIndex = this.buffs.findIndex(b => b.type === buffType);
+        var buffIndex = this.buffs.findIndex(b => b.name === buffName);
         if (buffIndex > -1) {
             var buff = this.buffs[buffIndex];
             // @ts-ignore
@@ -333,37 +351,23 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             clearTimeout(buff.timeoutHandler);
             this.buffs.splice(buffIndex, 1);
             if (buff.dispellCallback !== null) {
-                console.log('dispell callback on', this.name, buffType);
+                console.log('dispell callback on', this.name, buffName);
                 buff.dispellCallback(this);
             }
         }
     }
 
-    castSpell(spellType) {
-        switch (spellType) {
-            case SPELLS.SPRINT:
-                this.setShouldTrace(true);
-                this.applyBuff(
-                    BUFF_TYPES.SPRINT,
-                    kBuffDurations[BUFF_TYPES.SPRINT],
-                    (caster) => (caster.setShouldTrace(false))
-                );
-                break;
-            case SPELLS.FIREBALL:
-            case SPELLS.ICEBALL:
-                var projectile = new Projectile(
-                    this.scene,
-                    this, // creator
-                    spellType, // texture
-                    spellType // type
-                );
-                break;
+    castSpell(spellName: SpellName) {
+        let spell = this.spells[spellName];
+        if (spell === undefined) {
+            console.log(this.name, 'is trying to cast a spell he doesnt have:', spellName);
+            return;
         }
-        // @ts-ignore
+        spell.cast();
         if (game.player === this) {
             // only send cast signal from this client
             // @ts-ignore
-            socket.emit('on_player_cast', playerData(this), spellType);
+            socket.emit('on_player_cast', playerData(this), spellName);
         }
 
     }
