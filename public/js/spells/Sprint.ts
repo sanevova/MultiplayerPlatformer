@@ -15,7 +15,7 @@ export class Sprint extends Spell {
         );
     }
 
-    cast(): void {
+    castImpl(): void {
         this.caster.setShouldTrace(true);
         this.caster.applyBuff(
             BuffName.SPRINT,

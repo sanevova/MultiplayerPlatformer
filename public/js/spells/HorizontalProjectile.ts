@@ -20,7 +20,7 @@ export class HorizontalProjectile extends Spell {
         }
     }
 
-    cast(): void {
+    castImpl(): void {
         var projectile = new Projectile(
             // @ts-ignore
             this.caster.scene,
