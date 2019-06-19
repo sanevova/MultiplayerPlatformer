@@ -2,10 +2,7 @@ import {game, createPlayerFromPlayerData} from '../main'
 // import 'socket.io'
 
 function findPlayer(name) {
-    // @ts-ignore
-    return game.players.find(
-        (aPlayer) => aPlayer.name === name
-    );
+    return game.players.find((aPlayer) => aPlayer.name === name);
 }
 
 
@@ -26,7 +23,6 @@ export function configureSocketEvents(socket) {
     });
     socket.on('player_did_disconnect', (name) => {
         console.log('disconnected!', name);
-        // @ts-ignore
         let dcPlayerIndex = game.players.findIndex(x => x.name === name);
         game.players.splice(dcPlayerIndex, 1)[0].destroyPlayer();
     });

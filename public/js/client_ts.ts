@@ -16,7 +16,6 @@ export function connectAs(player) {
         rport = 80;
     }
 
-  // @ts-ignore
   // var socket = socketio.io(`http://${rhost}:${rport}`,  {secure: true});
   var socket = io.connect(`http://${rhost}:${rport}`,  {secure: true});
 

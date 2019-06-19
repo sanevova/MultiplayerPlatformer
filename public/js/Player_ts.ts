@@ -314,7 +314,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     applyBuff(buffName: BuffName, buffDuration, dispellCallback = null) {
         console.log(`${buffName}, enum: ${BuffName.SPRINT}`);
-        // @ts-ignore target is es6 in tsconfig????????
         var existingBuff = this.buffs.find(b => b.name === buffName);
         if (existingBuff === undefined) {
             console.log('not found', buffName, existingBuff, this.buffs);
@@ -338,7 +337,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
 
     removeBuff(buffName: BuffName) {
-        // @ts-ignore target is es6 in tsconfig????????
         var buffIndex = this.buffs.findIndex(b => b.name === buffName);
         if (buffIndex > -1) {
             var buff = this.buffs[buffIndex];
