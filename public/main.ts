@@ -61,6 +61,23 @@ class YungSkryllaGame extends Phaser.Game {
     }
 }
 
+// import {YungSkryllaScene} from './js/game/YungSkryllaScene'
+//
+// var newConfig = {
+//     type: Phaser.AUTO,
+//     width: world.width,
+//     height: world.height,
+//     physics: {
+//         default: 'arcade',
+//         arcade: {
+//             gravity: { y: 450 },
+//             debug: isLocalhost()
+//         }
+//     },
+//     scene: new YungSkryllaScene(newConfig)
+// };
+// export var game = new Phaser.Game(config);
+
 // export var game = new Phaser.Game(config);
 export var game = new YungSkryllaGame(config);
 
