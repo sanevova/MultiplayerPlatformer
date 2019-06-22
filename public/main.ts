@@ -74,10 +74,14 @@ class YungSkryllaGame extends Phaser.Game {
 //             debug: isLocalhost()
 //         }
 //     },
-//     scene: new YungSkryllaScene(newConfig)
+//     scene: new YungSkryllaScene(newConfig) // scene name instead of config actually
+// https://github.com/photonstorm/phaser3-examples/blob/master/public/src/scenes/scene%20from%20instance.js
 // };
 // export var game = new Phaser.Game(config);
 
+// var gameScene = new Phaser.Scene('Game');
+
+// export var game = new Phaser.Game(newConfig);
 // export var game = new Phaser.Game(config);
 export var game = new YungSkryllaGame(config);
 
@@ -219,9 +223,6 @@ function create() {
             body.gameObject.destroy();
         }
     });
-//
-//     // unimportant stuff
-//     createExtra();
 }
 
 function checkHit(attacker, attackType) {
@@ -285,8 +286,8 @@ export function bindAttack(aPlayer, condition, attackType) {
         aPlayer.anims.play(attackType, false);
     }
 }
-//
-function update() {
+
+function update(time, delta) {
     if (keyK.isDown) {
         socket.emit('kick_all');
     }
@@ -397,9 +398,7 @@ function update() {
     bindAttack(player, shouldBow, 'attack_bow' + (player.airborne ? '_jump' : ''));
 
     tickNumber += 1;
-    // ~ 7sec per 1k ticks
-    if (tickNumber % 5000 === 0) {
-        // ~3 qps per client
+    if (tickNumber % 500 === 0) {
         // socket.emit('on_sync_pos', playerData(player));
     }
 
@@ -426,29 +425,6 @@ function updateLabels() {
 //       text.setVisible(player.shouldShowText);
 //     });
 }
-//
-// function createExtra() {
-//     // extra
-//
-//     fontObj = { fontFamily: '"Roboto Condensed"', fontSize:'24px' };
-//     // controls
-//     controlsText = scene.add.text(0, 0, controlsString, fontObj);
-//     hiScoreText = scene.add.text(0, 40, `hi score: ${hiScore.name} => ${hiScore.count}`, fontObj);
-//     jumpScoreText = scene.add.text(0, 80, `jump score: ${player.jumpScore}`, fontObj);
-//     labels = [controlsText, hiScoreText, jumpScoreText];
-//     if (player.shouldTrackStats) {
-//         pollMaxJumps();
-//     }
-//     updateLabels();
-//     scene.input.keyboard.on('keydown', function (eventName, event) {
-//         if (eventName.key === 'z') {
-//             eventName.stopImmediatePropagation();
-//             player.shouldShowText = !player.shouldShowText;
-//             updateLabels();
-//         }
-//     });
-//     var particles = scene.add.particles('red');
-// }
 
 function getUrlParameter(name: string): string {
     name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
