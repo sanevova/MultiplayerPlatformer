@@ -4,6 +4,7 @@ import {Spell, SpellName} from './spells/Spell'
 import {Sprint} from './spells/Sprint'
 import {Fireball} from './spells/Fireball'
 import {Iceball} from './spells/Iceball'
+import {Arrow} from './objects/Arrow'
 import {Projectile} from './Projectile_ts'
 import {playerData} from './game/PlayerUtils'
 
@@ -17,12 +18,6 @@ var kNameFont = {
     fill: "#c51b7d"
 };
 
-export const SPELLS = {
-    SPRINT: 'sprint',
-    FIREBALL: 'fireball',
-    ICEBALL: 'iceball',
-};
-
 const BUFF_TYPES = {
     SPRINT: 'sprint',
 };
@@ -33,9 +28,7 @@ var kBuffDurations = {
 var attackDamageByType = {
     attack_slash: 10,
     attack_overhead: 10,
-    attack_uppercut: 10,
-    attack_bow: 20,
-    attack_bow_jump: 30
+    attack_uppercut: 10
 };
 
 var eps = 0.00001;
@@ -258,6 +251,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     checkHitAll(attackType) {
         // check hit
         let isBowAttack = attackType.startsWith('attack_bow');
+        if (isBowAttack) {
+            // shots create arrows which do damage; the bow attack does not;
+            return;
+        }
         let isLookingLeft = this.flipX;
         for (var i = 0; i < this.scene.players.length; ++i) {
             let target = this.scene.players[i];
@@ -285,11 +282,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
                     },
                     attackType: attackType
                 });
-                // will do damage on callback after confirmation from server
-                if (isBowAttack) {
-                    // bow does not splash
-                    break;
-                }
             }
         }
     }
@@ -300,9 +292,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             let isBowAttack = attackType.startsWith('attack_bow');
             let duration = isBowAttack ? bowAttackDuration : attackDuration;
             // stop attack state after attack finished
-            (function(attacker) {
-                setTimeout(() => {attacker.isAttacking = false;}, duration);
-            })(this);
+            (function(attacker, type) {
+                setTimeout(() => {
+                    attacker.isAttacking = false;
+                    let isBowAttack = attackType.startsWith('attack_bow');
+                    if (isBowAttack) {
+                        new Arrow(attacker.scene, attacker);
+                    }
+                }, duration);
+            })(this, attackType);
 
             // only check for hit by this player on this client
             // to avoid sending the same hit signal from multiple clients

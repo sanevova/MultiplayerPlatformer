@@ -56,9 +56,6 @@ export class Projectile extends Phaser.Physics.Arcade.Sprite {
         // @ts-ignore
         this.body.onWorldBounds = true;
 
-        // fire/ice ball model
-        this.setScale(3).setRotation(Math.PI);
-        this.setSize(10, 10);
         // this.setOrigin(0.8, 1);
         this.setPosition(x - creator.displayWidth, y);
         this.flipX = creator.flipX;
@@ -70,7 +67,6 @@ export class Projectile extends Phaser.Physics.Arcade.Sprite {
             this.setOrigin(0.8, 1);
             this.setVelocityX(kProjectileSpeed[type]);
         }
-        this.anims.play(type + '-burn');
         this.creator.projectiles.push(this);
     }
 
