@@ -9,6 +9,7 @@ export class YungSkryllaSceneUpdate extends YungSkryllaSceneCreate {
         if (this.constructor === YungSkryllaSceneUpdate) {
             throw new TypeError('Abstract class "YungSkryllaSceneUpdate" cannot be instantiated directly.');
         }
+        this.tickNumber = 0;
     }
 
     update(time, delta) {

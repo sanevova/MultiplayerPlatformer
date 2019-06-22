@@ -1,4 +1,5 @@
 bundle.js
+public/bundle.js
 vid*.flv
 
 # Logs
