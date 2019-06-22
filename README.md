@@ -1,13 +1,12 @@
 # COMPILE
 ```
-cd public
-browserify -x uws main.ts -p [ tsify ] > bundle.js
+npm run build
 ```
-
 
 # Setup
 ```
 npm install
+
 ```
 
 # Start game & http server
