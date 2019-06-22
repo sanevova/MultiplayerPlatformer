@@ -1,6 +1,5 @@
-// import './phaser'
 import 'phaser';
-import {attackDuration, bowAttackDuration} from '../main'
+import {attackDuration, bowAttackDuration} from './Player_ts'
 
 export function loadAnimations(scene) {
     // adventurer

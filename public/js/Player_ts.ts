@@ -1,13 +1,14 @@
-// import './phaser'
 import 'phaser';
+import {YungSkryllaSceneUpdate} from './game/YungSkryllaSceneUpdate'
 import {Spell, SpellName} from './spells/Spell'
 import {Sprint} from './spells/Sprint'
 import {Fireball} from './spells/Fireball'
 import {Iceball} from './spells/Iceball'
 import {Projectile} from './Projectile_ts'
-import {game, socket, tickNumber, bindAttack, playerData} from '../main'
+import {playerData} from './game/PlayerUtils'
 
-console.log('roflxd');
+export var attackDuration = 500;
+export var bowAttackDuration = 1000;
 
 var kNameFont = {
     fontFamily: '"Roboto Condensed"',
@@ -63,6 +64,7 @@ interface Buff {
 };
 
 export class Player extends Phaser.Physics.Arcade.Sprite {
+    scene: YungSkryllaSceneUpdate;
     name: string;
     health: number;
     nameTag: Phaser.GameObjects.Text;
@@ -83,12 +85,18 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     isCrouching: boolean;
     shouldMove: boolean;
 
+    didCrouch: boolean;
+    didMoveLeft: boolean;
+    didMoveRight: boolean;
+    didJump: boolean;
+
     constructor(scene, x, y, name, texture = 'adventurer') {
         // init and bind to scene
         super(scene, x, y, texture);
         scene.add.existing(this);
         scene.physics.add.existing(this);
 
+        this.scene = scene;
         this.name = name;
         this.setSize(25, 34).setScale(2)
         this.setCollideWorldBounds(true);
@@ -188,7 +196,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
         // spells & buffs
         // @ts-ignore
-        if (this.shouldShowBuffTimes || game.config.physics.arcade.debug) {
+        if (this.shouldShowBuffTimes || this.scene.config.physics.arcade.debug) {
             this.buffs.map((buff, index) => {
                 var durationLeft = parseFloat(
                     // maxDuration - currentDuration
@@ -247,8 +255,70 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.anims.play('idle', true);
     };
 
+    checkHitAll(attackType) {
+        // check hit
+        let isBowAttack = attackType.startsWith('attack_bow');
+        let isLookingLeft = this.flipX;
+        for (var i = 0; i < this.scene.players.length; ++i) {
+            let target = this.scene.players[i];
+            if (target === this) {
+                continue;
+            }
+            let xHitDistanceThreshold = target.displayWidth;
+            let yHitDistanceThreshold = target.displayHeight / 2;
+            let isTargetToLeft = target.x - this.x < 0;
+            let didHit =
+                Math.abs(target.x - this.x) < xHitDistanceThreshold
+                && Math.abs(target.y - this.y) < yHitDistanceThreshold
+                && (
+                    (isLookingLeft && isTargetToLeft)
+                    || (!isLookingLeft && !isTargetToLeft)
+                );
+            if (didHit) {
+                console.log(`${this.name} hit ${target.name}!`)
+                this.scene.socket.emit('on_player_hit', {
+                    attacker: {
+                        name: this.name
+                    },
+                    target: {
+                        name: target.name
+                    },
+                    attackType: attackType
+                });
+                // will do damage on callback after confirmation from server
+                if (isBowAttack) {
+                    // bow does not splash
+                    break;
+                }
+            }
+        }
+    }
+
+    bindAttack(condition, attackType) {
+        if (condition && !this.isAttacking) {
+            this.isAttacking = true;
+            let isBowAttack = attackType.startsWith('attack_bow');
+            let duration = isBowAttack ? bowAttackDuration : attackDuration;
+            // stop attack state after attack finished
+            (function(attacker) {
+                setTimeout(() => {attacker.isAttacking = false;}, duration);
+            })(this);
+
+            // only check for hit by this player on this client
+            // to avoid sending the same hit signal from multiple clients
+            if (this === this.scene.player) {
+                // check if hit any target in the middle of the attack
+                // for better responsiveness
+                (function(attacker, attackType) {
+                    setTimeout(() => attacker.checkHitAll(attackType), duration / 2);
+                })(this, attackType);
+            }
+            this.anims.play(attackType, false);
+        }
+    }
+
     attack(attackType) {
-        bindAttack(this, true, attackType);
+        this.bindAttack(true, attackType);
     };
 
     destroyPlayer() {
@@ -292,7 +362,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             }
         }
         // @ts-ignore
-        if (tickNumber % 15 === 0) {
+        if (this.scene.tickNumber % 15 === 0) {
             this.traces.shift().destroy();
             this.traces.push(
                 this.scene.add.sprite(this.x, this.y, this.texture.key)
@@ -341,7 +411,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         if (buffIndex > -1) {
             var buff = this.buffs[buffIndex];
             // @ts-ignore
-            if (this.shouldShowBuffTimes || game.config.physics.arcade.debug) {
+            if (this.shouldShowBuffTimes || this.scene.config.physics.arcade.debug) {
                 if (buff.debugText !== undefined) {
                     buff.debugText.destroy();
                 }
@@ -362,10 +432,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             return;
         }
         spell.cast();
-        if (game.player === this) {
+        if (this === this.scene.player) {
             // only send cast signal from this client
             // @ts-ignore
-            socket.emit('on_player_cast', playerData(this), spellName);
+            this.scene.socket.emit('on_player_cast', playerData(this), spellName);
         }
 
     }

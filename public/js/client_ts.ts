@@ -1,5 +1,3 @@
-// import * as socketio from 'socket.io';
-// import 'socket.io'
 import * as io from 'socket.io-client';
 
 export function isLocalhost(): boolean {

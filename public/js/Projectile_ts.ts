@@ -1,7 +1,6 @@
 // import './phaser'
 import 'phaser';
 import {Player} from './Player_ts'
-import {game} from '../main'
 
 
 var kProjectileSpeed = {
@@ -32,11 +31,11 @@ export class Projectile extends Phaser.Physics.Arcade.Sprite {
         scene.physics.add.existing(this);
         scene.physics.add.collider(
             this,
-            scene.game.platforms,
+            scene.platforms,
             (projectile, platform) => projectile.didCollideWithPlatform(platform));
 
         // global state = questionable
-        game.players.map(aPlayer => {
+        scene.players.map(aPlayer => {
             // don't add collisions with player who created the projectile
             if (aPlayer !== this.creator) {
                 scene.physics.add.collider(

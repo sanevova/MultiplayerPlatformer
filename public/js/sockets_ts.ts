@@ -1,8 +1,8 @@
-import {game, createPlayerFromPlayerData} from '../main'
-// import 'socket.io'
+import {scene} from '../main'
+import {createPlayerFromPlayerData} from './game/PlayerUtils'
 
 function findPlayer(name) {
-    return game.players.find((aPlayer) => aPlayer.name === name);
+    return scene.players.find((aPlayer) => aPlayer.name === name);
 }
 
 
@@ -10,21 +10,21 @@ export function configureSocketEvents(socket) {
     socket.on('did_connect', (gameState) => {
         console.log('connected! other players:', gameState);
         // add game objects for other players
-        game.players = game.players.concat(gameState.otherPlayers.map(
-            (otherPlayer) => createPlayerFromPlayerData(otherPlayer)
+        scene.players = scene.players.concat(gameState.otherPlayers.map(
+            (otherPlayer) => createPlayerFromPlayerData(scene, otherPlayer)
         ));
     });
     socket.on('player_did_connect', (newPlayer) => {
         console.log('new player connected!', newPlayer);
         // add game object for new player
-        let newPlayerObj = createPlayerFromPlayerData(newPlayer);
+        let newPlayerObj = createPlayerFromPlayerData(scene, newPlayer);
         newPlayerObj.anims.play('idle', true);
-        game.players.push(newPlayerObj);
+        scene.players.push(newPlayerObj);
     });
     socket.on('player_did_disconnect', (name) => {
         console.log('disconnected!', name);
-        let dcPlayerIndex = game.players.findIndex(x => x.name === name);
-        game.players.splice(dcPlayerIndex, 1)[0].destroyPlayer();
+        let dcPlayerIndex = scene.players.findIndex(x => x.name === name);
+        scene.players.splice(dcPlayerIndex, 1)[0].destroyPlayer();
     });
     socket.on('did_sync_pos', (playerData) => {
         let match = findPlayer(playerData.name);
