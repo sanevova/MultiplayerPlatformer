@@ -16,7 +16,6 @@ export class YungSkryllaScenePreload extends Phaser.Scene {
     }
 
     preload(): void {
-        console.log('test java');
         this.controller = new Controller(this);
         console.log('preload');
         this.load.image('platform', 'assets/blocks/platform.png');
