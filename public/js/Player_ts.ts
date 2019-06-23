@@ -265,12 +265,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     tryDropDown() {
         let isTooLow = this.scene.physics.world.bounds.height - this.getBounds().bottom < 2 * this.displayHeight;
-        console.log('low', this.scene.physics.world.bounds.height - this.getBounds().bottom, 2 * this.displayHeight);
-        let shouldDropDown = !this.isAirborne && this.isCrouching && !isTooLow;
+        // only calling once per dropdown - checking !this.isDroppingDown;
+        let shouldDropDown = !this.isDroppingDown && !this.isAirborne && this.isCrouching && !isTooLow;
         if (!shouldDropDown) {
             // can only drop down when standing on smth
             // need to be crouching to drop down
             return;
+        }
+        if (this === this.scene.player) {
+            this.scene.socket.emit('on_player_dropDown', playerData(this));
         }
         let platformsCollider = this._withPlatformsCollider();
         platformsCollider.active = false;
@@ -283,10 +286,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             // nothing to finish
             return;
         }
-        if (this.scene.physics.overlap(this, this.scene.platforms)) {
+        if (this.scene.physics.overlap(this, this.scene.platforms) || !this.isAirborne) {
             // overlapping -> still falling thru platform
+            // or is on the ground and just starting to drop
             return;
         }
+        // if (this !== this.scene.player)
         this._withPlatformsCollider().active = true;
         this.isDroppingDown = false;
         if (this === this.scene.player) {
