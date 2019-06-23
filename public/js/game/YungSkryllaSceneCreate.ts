@@ -14,12 +14,16 @@ export class YungSkryllaSceneCreate extends YungSkryllaScenePreload {
         height: window.innerHeight
     };
 
-
     constructor(config) {
         super(config);
         if (this.constructor === YungSkryllaSceneCreate) {
             throw new TypeError('Abstract class "YungSkryllaSceneCreate" cannot be instantiated directly.');
         }
+    }
+
+    _addPlatform(x, y) {
+        let platform = this.platforms.create(x, y, 'platform').refreshBody();
+        platform.setSize(0.9 * platform.width, platform.height);
     }
 
     create() {
@@ -31,20 +35,20 @@ export class YungSkryllaSceneCreate extends YungSkryllaScenePreload {
 
         this.platforms = this.physics.add.staticGroup();
 
-        this.platforms.create(100, 528, 'platform').refreshBody();
-        this.platforms.create(300, 528, 'platform').refreshBody();
-        this.platforms.create(500, 528, 'platform').refreshBody();
-        this.platforms.create(700, 528, 'platform').refreshBody();
-        this.platforms.create(1000, 628, 'platform').refreshBody();
-        this.platforms.create(1400, 828, 'platform').refreshBody();
-        this.platforms.create(1200, 998, 'platform').refreshBody();
-        this.platforms.create(900, 1100, 'platform').refreshBody();
+        this._addPlatform(100, 528);
+        this._addPlatform(300, 528);
+        this._addPlatform(500, 528);
+        this._addPlatform(700, 528);
+        this._addPlatform(1000, 628);
+        this._addPlatform(1400, 828);
+        this._addPlatform(1200, 998);
+        this._addPlatform(900, 1100);
         for (var i = 0; i < 20; ++i) {
-            this.platforms.create(200 * i + 100, this.world.height - 60, 'platform').refreshBody();
+            this._addPlatform(200 * i + 100, this.world.height - 60);
         }
-        this.platforms.create(600, 370, 'platform').refreshBody();
-        this.platforms.create(50, 250, 'platform').refreshBody();
-        this.platforms.create(750, 220, 'platform').refreshBody();
+        this._addPlatform(600, 370);
+        this._addPlatform(50, 250);
+        this._addPlatform(750, 220);
 
         this._createMyPlayer();
         configureSocketEvents(this.socket);
@@ -78,7 +82,6 @@ export class YungSkryllaSceneCreate extends YungSkryllaScenePreload {
         this.socket = connectAs(playerData(this.player));
         return this.player;
     }
-
 
     getUrlParameter(name: string): string {
         name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');

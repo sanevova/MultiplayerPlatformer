@@ -29,10 +29,10 @@ export class YungSkryllaSceneUpdate extends YungSkryllaSceneCreate {
         let shouldAnimateMovement = !airborne && !player.isAttacking;
 
         // movement
-        let shouldCrouch = (controller.keyC.isDown || controller.keyS.isDown) && shouldAnimateMovement
+        let shouldCrouch = (controller.keyC.isDown || controller.keyS.isDown) && shouldAnimateMovement && !player.isDroppingDown
         let shouldMoveLeft = cursors.left.isDown || controller.keyA.isDown
         let shouldMoveRight = cursors.right.isDown || controller.keyD.isDown;
-        let shouldJump = (cursors.up.isDown || controller.keyW.isDown || cursors.space.isDown) && !airborne;
+        let shouldJump = (cursors.up.isDown || controller.keyW.isDown || cursors.space.isDown) && !airborne && !this.player.isCrouching;
         let shouldSlash = controller.keyQ.isDown;
         let shouldOverhead = controller.keyE.isDown;
         let shouldUppercut = controller.keyR.isDown;
@@ -89,13 +89,24 @@ export class YungSkryllaSceneUpdate extends YungSkryllaSceneCreate {
             this.socket.emit('on_player_attack', playerData(player), 'attack_bow');
         }
 
+        if (controller.cursors.space.isDown && this.controller.canDropDown && controller.cursors.space.repeats < 5) {
+            this.player.tryDropDown();
+            this.controller.canDropDown = false;
+        } else if (
+            !this.player.isDroppingDown
+            && !this.controller.canDropDown
+            && controller.cursors.space.isUp
+        ) {
+            this.controller.canDropDown = true;
+        }
+
         if (shouldMoveLeft) {
             player.moveLeft();
         }
         else if (shouldMoveRight) {
             player.moveRight();
         }
-        else {
+        else if (!player.isDroppingDown) {
             player.setVelocityX(0);
             if (shouldAnimateMovement) {
                 player.anims.play('idle', true);

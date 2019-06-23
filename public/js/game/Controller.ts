@@ -18,6 +18,8 @@ export class Controller {
 
     cursors: any;
 
+    canDropDown: boolean;
+
     constructor(scene: YungSkryllaScenePreload) {
         this.keyW = scene.input.keyboard.addKey('W');
         this.keyA = scene.input.keyboard.addKey('A');
@@ -30,6 +32,7 @@ export class Controller {
         this.keyC = scene.input.keyboard.addKey('C');
         this.keyK = scene.input.keyboard.addKey('K');
         this.cursors = scene.input.keyboard.createCursorKeys();
+        this.canDropDown = true;
         this.bindSpells(scene);
     }
 

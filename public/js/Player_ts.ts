@@ -71,6 +71,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     kTraceCount: number;
     traces: Phaser.GameObjects.Sprite[];
 
+    isAirborne: boolean;
+    isDroppingDown: boolean;
     airborne: boolean;
     moveSpeed: number;
     shouldAnimateMovement: boolean;
@@ -113,6 +115,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.traces = [];
         this.kTraceCount = 5;
         this.shouldMove = false;
+        this.isDroppingDown = false;
 
         return this;
     }
@@ -126,10 +129,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         });
 
         // state
-        this.airborne = !this.body.touching.down;
+        this.isAirborne = !this.body.touching.down;
         this.moveSpeed = this.isCrouching ? moveSpeedNormal / 3 : moveSpeedNormal;
-        this.shouldAnimateMovement = !this.airborne && !this.isAttacking;
+        this.shouldAnimateMovement = !this.isAirborne && !this.isAttacking;
         if (!this.isAttacking) {
+            if (this.isDroppingDown) {
+                this.anims.play('jump', true);
+            }
             // fix animations? here ?????????
             // if (aPlayer.airborne) {
             //     aPlayer.anims.play('jump', true);
@@ -142,6 +148,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
         // draw trace animation
         this.trace();
+
+        this._tryFinishDroppingDown();
 
         // spells & buffs
         if (this.buffs.some(b => b.name === BuffName.SPRINT)) {
@@ -207,7 +215,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     jump() {
         // < 0 but accounting for float error
-        if (this.body.velocity.y < -5) {
+        if (this.body.velocity.y < -5 || this.isDroppingDown) {
             // already jumping
             return;
         }
@@ -247,6 +255,44 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.setVelocityX(0);
         this.anims.play('idle', true);
     };
+
+    // get player (this) <-> platforms collider
+    _withPlatformsCollider() {
+        return this.scene.physics.world.colliders.getActive().find(
+            (c) => c.object1 === this && c.object2 === this.scene.platforms
+        );
+    }
+
+    tryDropDown() {
+        let isTooLow = this.scene.physics.world.bounds.height - this.getBounds().bottom < 2 * this.displayHeight;
+        console.log('low', this.scene.physics.world.bounds.height - this.getBounds().bottom, 2 * this.displayHeight);
+        let shouldDropDown = !this.isAirborne && this.isCrouching && !isTooLow;
+        if (!shouldDropDown) {
+            // can only drop down when standing on smth
+            // need to be crouching to drop down
+            return;
+        }
+        let platformsCollider = this._withPlatformsCollider();
+        platformsCollider.active = false;
+        this.setVelocityY(jumpSpeedNormal / 2);
+        this.isDroppingDown = true;
+    }
+
+    _tryFinishDroppingDown() {
+        if (!this.isDroppingDown) {
+            // nothing to finish
+            return;
+        }
+        if (this.scene.physics.overlap(this, this.scene.platforms)) {
+            // overlapping -> still falling thru platform
+            return;
+        }
+        this._withPlatformsCollider().active = true;
+        this.isDroppingDown = false;
+        if (this === this.scene.player) {
+            this.scene.controller.canDropDown = true;
+        }
+    }
 
     checkHitAll(attackType) {
         // check hit
@@ -384,7 +430,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         console.log(`${buffName}, enum: ${BuffName.SPRINT}`);
         var existingBuff = this.buffs.find(b => b.name === buffName);
         if (existingBuff === undefined) {
-            console.log('not found', buffName, existingBuff, this.buffs);
             this.buffs.push({
                 name: buffName,
                 startTime: Date.now(),
