@@ -3,7 +3,9 @@ import {Player} from '../Player_ts'
 export enum SpellName {
     SPRINT = 'sprint',
     FIREBALL = 'fireball',
-    ICEBALL = 'iceball'
+    ICEBALL = 'iceball',
+    SOLAR_VORTEX = 'solar_vortex',
+    SNOW_VORTEX = 'snow_vortex'
 };
 
 export enum SpellTargetType {
@@ -42,7 +44,7 @@ export class Spell {
         this.isOnCooldown = false;
     }
 
-    cast(): void {
+    cast(targetData): void {
         if (this.isOnCooldown) {
             console.log(`${this.caster.name} cannot cast ${this.name}: ON COOLDOWN!`);
             return;
@@ -55,10 +57,10 @@ export class Spell {
                 console.log(`${spell.name} off cooldown!`);
             }, spell.cooldown);
         })(this);
-        this.castImpl();
+        this.castImpl(targetData);
     }
 
-    castImpl(): void {
+    castImpl(targetData): void {
         if (this.constructor === Spell) {
             throw new TypeError('Override "cast" method from abstract class "Spell".');
         }

@@ -29,8 +29,8 @@ export class YungSkryllaSceneUpdate extends YungSkryllaSceneCreate {
         let shouldAnimateMovement = !airborne && !player.isAttacking;
 
         // movement
-        let shouldCrouch = (controller.keyC.isDown || controller.keyS.isDown) && shouldAnimateMovement && !player.isDroppingDown
-        let shouldMoveLeft = cursors.left.isDown || controller.keyA.isDown
+        let shouldCrouch = (controller.keyC.isDown || controller.keyS.isDown) && shouldAnimateMovement && !player.isDroppingDown;
+        let shouldMoveLeft = cursors.left.isDown || controller.keyA.isDown;
         let shouldMoveRight = cursors.right.isDown || controller.keyD.isDown;
         let shouldJump = (cursors.up.isDown || controller.keyW.isDown || cursors.space.isDown)
                 && !airborne && !this.player.isCrouching && !player.isDroppingDown;

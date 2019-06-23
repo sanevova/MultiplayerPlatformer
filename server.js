@@ -93,8 +93,8 @@ io.on('connection', (socket) => {
         socket.emit('player_did_hit', hitData);
         socket.broadcast.emit('player_did_hit', hitData);
     });
-    socket.on('on_player_cast', (playerData, spellType) => {
-        socket.broadcast.emit('player_did_cast', playerData, spellType);
+    socket.on('on_player_cast', (playerData, spellType, targetData) => {
+        socket.broadcast.emit('player_did_cast', playerData, spellType, targetData);
     });
 
     socket.on('on_sync_pos', (player) => {

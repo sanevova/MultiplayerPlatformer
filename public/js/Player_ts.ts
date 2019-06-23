@@ -5,6 +5,9 @@ import {Sprint} from './spells/Sprint'
 import {Fireball} from './spells/Fireball'
 import {Iceball} from './spells/Iceball'
 import {Arrow} from './objects/Arrow'
+import {Vortex} from './objects/Vortex'
+import {SnowVortex} from './spells/SnowVortex'
+import {SolarVortex} from './spells/SolarVortex'
 import {Projectile} from './Projectile_ts'
 import {playerData} from './game/PlayerUtils'
 
@@ -44,7 +47,9 @@ var healthBarColor = 0x84FB21;
 type PlayerSpells = {[name: string]: Spell};
 
 export enum BuffName {
-    SPRINT = 'sprint'
+    SPRINT = 'sprint',
+    SLOW = 'slow',
+    AMPLIFY = 'amplify'
 }
 
 interface Buff {
@@ -65,6 +70,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     spells: PlayerSpells;
     buffs: Buff[];
     projectiles: Projectile[];
+    aoeSpellObjects: Phaser.Physics.Arcade.Sprite[];
 
     shouldShowBuffTimes: boolean;
     shouldTrace: boolean;
@@ -84,6 +90,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     didMoveLeft: boolean;
     didMoveRight: boolean;
     didJump: boolean;
+
+    damageCoefficient: number;
 
     constructor(scene, x, y, name, texture = 'adventurer') {
         // init and bind to scene
@@ -107,8 +115,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.spells[SpellName.SPRINT] = new Sprint(this);
         this.spells[SpellName.FIREBALL] = new Fireball(this);
         this.spells[SpellName.ICEBALL] = new Iceball(this);
+        this.spells[SpellName.SOLAR_VORTEX] = new SolarVortex(this);
+        this.spells[SpellName.SNOW_VORTEX] = new SnowVortex(this);
         this.projectiles = [];
+        this.aoeSpellObjects = [];
         this.shouldShowBuffTimes = true;
+        this.damageCoefficient = 1;
 
         // trace animation
         this.shouldTrace = false;
@@ -152,9 +164,21 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this._tryFinishDroppingDown();
 
         // spells & buffs
-        if (this.buffs.some(b => b.name === BuffName.SPRINT)) {
-            this.moveSpeed *= kSprintSpeedMultiplier;
-        }
+        this.buffs.map(b => {
+            switch (b.name) {
+                case BuffName.SPRINT:
+                    this.moveSpeed *= kSprintSpeedMultiplier;
+                    break;
+                case BuffName.SLOW:
+                    this.moveSpeed *= 0.5;
+                    break;
+                case BuffName.AMPLIFY:
+                    this.damageCoefficient = 1.5;
+                    break;
+            }
+        });
+
+        this._processAoeSpellsOverlaps();
 
         if (this.shouldMove) {
             let isLookingLeft = this.flipX;
@@ -164,6 +188,37 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
                 this.moveRight();
             }
         }
+    }
+
+    // check all other players on overlap with aoe spell
+    _processAoeSpellsOverlaps() {
+        this.scene.players.map(target => {
+            if (target === this) {
+                // aoe spell objects do not affect caster
+                return;
+            }
+            this.aoeSpellObjects.map(spellObject => {
+                if (!this.scene.physics.overlap(target, spellObject)) {
+                    return;
+                }
+                switch (spellObject.texture.key) {
+                    case SpellName[SpellName.SNOW_VORTEX.toUpperCase()]:
+                        target.applyBuff(BuffName.SLOW, 1 * 1000);
+                        break;
+                    case SpellName[SpellName.SOLAR_VORTEX.toUpperCase()]:
+                        target.applyBuff(
+                            BuffName.AMPLIFY,
+                            1 * 1000,
+                            // reset damage coef on dispell
+                            player => {player.damageCoefficient = 1;}
+                        );
+                        break;
+                    default:
+                        console.log('unknown AOE spell obj', spellObject);
+                        break;
+                }
+            });
+        });
     }
 
     _drawChildren(): void {
@@ -383,6 +438,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     };
 
     receiveDamage(damageAmount) {
+        damageAmount *= this.damageCoefficient;
         this.health = Math.max(0, this.health - damageAmount);
     }
 
@@ -473,17 +529,17 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         }
     }
 
-    castSpell(spellName: SpellName) {
+    castSpell(spellName: SpellName, targetData = null) {
         let spell = this.spells[spellName];
         if (spell === undefined) {
             console.log(this.name, 'is trying to cast a spell he doesnt have:', spellName);
             return;
         }
-        spell.cast();
+        spell.cast(targetData);
         if (this === this.scene.player) {
             // only send cast signal from this client
             // @ts-ignore
-            this.scene.socket.emit('on_player_cast', playerData(this), spellName);
+            this.scene.socket.emit('on_player_cast', playerData(this), spellName, targetData);
         }
 
     }

@@ -78,4 +78,18 @@ export function loadAnimations(scene) {
         frameRate: 30,
         repeat: -1
     });
+
+    // effects
+    scene.anims.create({
+        key: 'solar_vortex-spin',
+        frames: scene.anims.generateFrameNumbers('solar_vortex', { start: 0, end: 60 }),
+        frameRate: 30,
+        repeat: -1
+    });
+    scene.anims.create({
+        key: 'snow_vortex-spin',
+        frames: scene.anims.generateFrameNumbers('snow_vortex', { start: 0, end: 60 }),
+        frameRate: 30,
+        repeat: -1
+    });
 }

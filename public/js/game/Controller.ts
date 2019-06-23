@@ -1,5 +1,6 @@
 import 'phaser'
 import {SpellName} from '../spells/Spell'
+import {Position} from '../game/PlayerUtils'
 import {YungSkryllaScenePreload} from './YungSkryllaScenePreload'
 
 type Key = Phaser.Input.Keyboard.Key;
@@ -33,22 +34,49 @@ export class Controller {
         this.keyK = scene.input.keyboard.addKey('K');
         this.cursors = scene.input.keyboard.createCursorKeys();
         this.canDropDown = true;
-        this.bindSpells(scene);
+        this._bindSpells(scene);
     }
 
-    bindSpells(scene: YungSkryllaScenePreload): void {
+    static pointerPosition(scene: YungSkryllaScenePreload): Position {
+        let pointer = scene.input.activePointer;
+        return {
+            x: pointer.x,
+            y: pointer.y
+        };
+    }
+
+    _bindSpells(scene: YungSkryllaScenePreload): void {
         // spell keybinds
         (function(gameScene) {
             scene.input.keyboard.on('keydown', function (eventName, event) {
+                let player = gameScene.player;
                 if (eventName.key === '1') {
                     eventName.stopImmediatePropagation();
-                    gameScene.player.castSpell(SpellName.SPRINT);
+                    player.castSpell(SpellName.SPRINT);
                 } else if (eventName.key === '2') {
                     eventName.stopImmediatePropagation();
-                    gameScene.player.castSpell(SpellName.FIREBALL);
+                    player.castSpell(SpellName.FIREBALL);
                 } else if (eventName.key === '3') {
                     eventName.stopImmediatePropagation();
-                    gameScene.player.castSpell(SpellName.ICEBALL);
+                    player.castSpell(SpellName.ICEBALL);
+                } else if (eventName.key === '4') {
+                    eventName.stopImmediatePropagation();
+                    if (scene.input.activePointer === null) {
+                        return;
+                    }
+                    player.castSpell(
+                        SpellName.SOLAR_VORTEX,
+                        Controller.pointerPosition(scene)
+                    );
+                } else if (eventName.key === '5') {
+                    eventName.stopImmediatePropagation();
+                    if (scene.input.activePointer === null) {
+                        return;
+                    }
+                    player.castSpell(
+                        SpellName.SNOW_VORTEX,
+                        Controller.pointerPosition(scene)
+                    );
                 }
             });
         })(scene);

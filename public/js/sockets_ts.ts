@@ -111,10 +111,10 @@ export function configureSocketEvents(socket) {
     });
 
 
-    socket.on('player_did_cast', (playerData, spellType) => {
+    socket.on('player_did_cast', (playerData, spellType, targetData) => {
         let match = findPlayer(playerData.name);
         if (match) {
-            match.castSpell(spellType);
+            match.castSpell(spellType, targetData);
         }
     });
 };
