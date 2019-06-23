@@ -82,8 +82,6 @@ export function configureSocketEvents(socket) {
     socket.on('player_did_dropDown', (playerData) => {
         let match = findPlayer(playerData.name);
         if (match) {
-            console.log('DROPDOWN', playerData);
-            // match.setPosition(playerData.pos.x, playerData.pos.y);
             match.tryDropDown();
         }
     });

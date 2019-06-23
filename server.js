@@ -81,7 +81,6 @@ io.on('connection', (socket) => {
         socket.broadcast.emit('player_did_stop_moveRight', player);
     });
     socket.on('on_player_dropDown', (player) => {
-        console.log('DRIO', player);
         socket.broadcast.emit('player_did_dropDown', player);
     });
     // socket.on('player_Jump', (player) => {
