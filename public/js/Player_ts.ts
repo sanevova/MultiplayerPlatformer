@@ -13,6 +13,7 @@ import {playerData} from './game/PlayerUtils'
 
 export var attackDuration = 500;
 export var bowAttackDuration = 1000;
+export var smashDuration = 350;
 
 var kNameFont = {
     fontFamily: '"Roboto Condensed"',
@@ -79,9 +80,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     isAirborne: boolean;
     isDroppingDown: boolean;
+    wasDroppingDown: boolean;
+    isSmashing: boolean;
+    isSmashLanding: boolean;
     airborne: boolean;
     moveSpeed: number;
-    shouldAnimateMovement: boolean;
     isAttacking: boolean;
     isCrouching: boolean;
     shouldMove: boolean;
@@ -128,6 +131,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.kTraceCount = 5;
         this.shouldMove = false;
         this.isDroppingDown = false;
+        this.wasDroppingDown = false;
+        this.isSmashing = false;
+        this.isSmashLanding = false;
+
+        this.isCrouching = false;
+        this.isAttacking = false;
 
         return this;
     }
@@ -143,19 +152,32 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         // state
         this.isAirborne = !this.body.touching.down;
         this.moveSpeed = this.isCrouching ? moveSpeedNormal / 3 : moveSpeedNormal;
-        this.shouldAnimateMovement = !this.isAirborne && !this.isAttacking;
+        if (this.wasDroppingDown && !this.isAirborne) {
+            this.wasDroppingDown = false;
+        }
         if (!this.isAttacking) {
-            if (this.isDroppingDown) {
+            if (this.isDroppingDown || this.isAirborne) {
+                // this.anims.stop();
                 this.anims.play('jump', true);
+            } else if (this.isSmashing && !this.isAirborne) {
+                // landed after smashing;
+                // stop smash landinging after animation end
+                (function(player) {
+                    setTimeout(() => {
+                        player.isSmashLanding = false;
+                    }, smashDuration);
+                })(this);
+                this.isSmashing = false;
+                this.isSmashLanding = true;
+            } else if (this.isSmashLanding) {
+                this.anims.play('smash', true);
+            } else if (this.shouldMove) {
+                this.anims.play('run', true);
+            } else if (this.isCrouching) {
+                this.anims.play('crouch', true);
+            } else {
+                this.anims.play('idle', true);
             }
-            // fix animations? here ?????????
-            // if (aPlayer.airborne) {
-            //     aPlayer.anims.play('jump', true);
-            // } else if (aPlayer.isCrouching) {
-            //     aPlayer.anims.play('crouch', true);
-            // } else {
-            //     aPlayer.anims.play('idle', true);
-            // }
         }
 
         // draw trace animation
@@ -279,7 +301,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     crouch() {
         this.isCrouching = true;
-        this.anims.play('crouch', true);
     };
 
     stopCrouch() {
@@ -287,28 +308,23 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     };
 
     moveLeft() {
-        let airborne = !this.body.touching.down;
-        let shouldAnimateMovement = !airborne && !this.isAttacking;
-        this.setVelocityX(-this.moveSpeed);
-        this.flipX = true;
-        if (shouldAnimateMovement) {
-            this.anims.play('run', true);
-        }
+        this._moveX(true);
     };
 
     moveRight() {
-        let airborne = !this.body.touching.down;
-        let shouldAnimateMovement = !airborne && !this.isAttacking;
-        this.setVelocityX(this.moveSpeed);
-        this.flipX = false;
-        if (shouldAnimateMovement) {
-            this.anims.play('run', true);
-        }
+        this._moveX(false);
     };
+
+    _moveX(isLeft: boolean) {
+        let sgn = isLeft ? -1 : 1;
+        this.setVelocityX(sgn * this.moveSpeed);
+        this.flipX = isLeft;
+        this.shouldMove = true;
+    }
 
     stopMove() {
         this.setVelocityX(0);
-        this.anims.play('idle', true);
+        this.shouldMove = false;
     };
 
     // get player (this) <-> platforms collider
@@ -349,9 +365,21 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         // if (this !== this.scene.player)
         this._withPlatformsCollider().active = true;
         this.isDroppingDown = false;
+        this.wasDroppingDown = true;
         if (this === this.scene.player) {
             this.scene.controller.canDropDown = true;
         }
+    }
+
+    trySmash() {
+        let shouldSmash = !this.isSmashing && this.isAirborne
+                && !this.isAttacking && !this.isDroppingDown && !this.wasDroppingDown;
+        if (!shouldSmash) {
+            return;
+        }
+        this.isSmashing = true;
+        this.setVelocityY(Math.max(this.body.velocity.y, 0) + 1.5 * jumpSpeedNormal);
+        this.scene.socket.emit('on_player_smash', playerData(this));
     }
 
     checkHitAll(attackType) {
@@ -488,7 +516,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
 
     applyBuff(buffName: BuffName, buffDuration, dispellCallback = null) {
-        console.log(`${buffName}, enum: ${BuffName.SPRINT}`);
         var existingBuff = this.buffs.find(b => b.name === buffName);
         if (existingBuff === undefined) {
             this.buffs.push({

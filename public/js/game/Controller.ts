@@ -16,6 +16,7 @@ export class Controller {
     keyF: Key;
     keyC: Key;
     keyK: Key;
+    keyZ: Key;
 
     cursors: any;
 
@@ -32,6 +33,7 @@ export class Controller {
         this.keyF = scene.input.keyboard.addKey('F');
         this.keyC = scene.input.keyboard.addKey('C');
         this.keyK = scene.input.keyboard.addKey('K');
+        this.keyZ = scene.input.keyboard.addKey('Z');
         this.cursors = scene.input.keyboard.createCursorKeys();
         this.canDropDown = true;
         this._bindSpells(scene);

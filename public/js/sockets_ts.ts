@@ -79,18 +79,26 @@ export function configureSocketEvents(socket) {
             match.moveRight();
         }
     });
-    socket.on('player_did_dropDown', (playerData) => {
-        let match = findPlayer(playerData.name);
-        if (match) {
-            match.tryDropDown();
-        }
-    });
     socket.on('player_did_stop_moveRight', (playerData) => {
         let match = findPlayer(playerData.name);
         if (match) {
             match.setPosition(playerData.pos.x, playerData.pos.y);
             match.shouldMove = false;
             match.stopMove();
+        }
+    });
+    socket.on('player_did_dropDown', (playerData) => {
+        let match = findPlayer(playerData.name);
+        if (match) {
+            match.setPosition(playerData.pos.x, playerData.pos.y);
+            match.tryDropDown();
+        }
+    });
+    socket.on('player_did_smash', (playerData) => {
+        let match = findPlayer(playerData.name);
+        if (match) {
+            match.setPosition(playerData.pos.x, playerData.pos.y);
+            match.trySmash();
         }
     });
 

@@ -1,5 +1,5 @@
 import 'phaser';
-import {attackDuration, bowAttackDuration} from './Player_ts'
+import {attackDuration, bowAttackDuration, smashDuration} from './Player_ts'
 
 export function loadAnimations(scene) {
     // adventurer
@@ -11,13 +11,13 @@ export function loadAnimations(scene) {
     });
     scene.anims.create({
         key: 'crouch',
-        frames: scene.anims.generateFrameNumbers('adventurer', { start: 4, end: 8 }),
+        frames: scene.anims.generateFrameNumbers('adventurer', { start: 4, end: 7 }),
         frameRate: 10,
         repeat: -1
     });
     scene.anims.create({
         key: 'run',
-        frames: scene.anims.generateFrameNumbers('adventurer', { start: 9, end: 14 }),
+        frames: scene.anims.generateFrameNumbers('adventurer', { start: 8, end: 14 }),
         frameRate: 10,
         repeat: -1
     });
@@ -57,6 +57,12 @@ export function loadAnimations(scene) {
         frames: scene.anims.generateFrameNumbers('adventurer-bow', { start: 9, end: 14 }),
         duration: bowAttackDuration,
         repeat: 0
+    });
+    scene.anims.create({
+        key: 'smash',
+        frames: scene.anims.generateFrameNumbers('adventurer', { start: 106, end: 108 }),
+        duration: smashDuration,
+        repeat: 0,
     });
 
     // projectiles

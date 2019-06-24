@@ -83,6 +83,9 @@ io.on('connection', (socket) => {
     socket.on('on_player_dropDown', (player) => {
         socket.broadcast.emit('player_did_dropDown', player);
     });
+    socket.on('on_player_smash', (player) => {
+        socket.broadcast.emit('player_did_smash', player);
+    });
     // socket.on('player_Jump', (player) => {
     //     socket.broadcast.emit('player_did_Jump', player);
     // });
