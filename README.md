@@ -3,6 +3,8 @@
 YungSkrylla is a 2d spell-based online multiplayer sandbox pvp platformer.
 Playable demo: http://yungskrylla.herokuapp.com/main.html
 
+![screenshot](https://bitbucket.org/sanevova/yungskrylla/raw/a3f74768c7f4d61f8e545fe220c6753077aef8f4/screen.png "gameplay screenshot")
+
 ## Controls
 
 wasd - move
